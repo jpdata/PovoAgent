@@ -73,4 +73,4 @@ argument-hint: 'Project name and main features'
 - `presentation/` accesses `domain/` only through use cases or ViewModels.
 
 ## Reference
-- [Flutter Conventions](../conventions.md)
+- Refer to `conventions.md` in the project root for Flutter conventions.

@@ -1,8 +1,6 @@
 ---
-title: Design Skill
-description: Defines decoupled architecture, UI/UX proposals, data modeling, and API contracts. Ensures the presentation layer is independent of business logic and backend.
 name: design
-mutable: false
+description: 'Defines decoupled architecture, UI/UX proposals, data modeling, and API contracts. Use when designing a system, defining layers, or creating architecture documents. Ensures the presentation layer is independent of business logic and backend.'
 ---
 # Design Skill
 

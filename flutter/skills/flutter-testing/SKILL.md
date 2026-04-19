@@ -67,4 +67,4 @@ genhtml coverage/lcov.info -o coverage/html
 - Test names: `should <expected behavior> when <condition>`
 
 ## Reference
-- [Flutter Conventions](../conventions.md)
+- Refer to `conventions.md` in the project root for Flutter conventions.

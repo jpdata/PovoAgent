@@ -72,4 +72,4 @@ reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coverage/html
 - Example: `GetUserUseCase_ShouldReturnUser_WhenUserExists`
 
 ## Reference
-- [.NET Conventions](../conventions.md)
+- Refer to `conventions.md` in the project root for .NET conventions.

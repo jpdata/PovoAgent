@@ -95,4 +95,4 @@ argument-hint: 'Project name, type (Web API / MAUI / Blazor) and main features'
 - `Presentation/` accesses `Application/` only through use cases or ViewModels.
 
 ## Reference
-- [.NET Conventions](../conventions.md)
+- Refer to `conventions.md` in the project root for .NET conventions.

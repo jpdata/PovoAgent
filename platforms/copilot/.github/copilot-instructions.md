@@ -45,4 +45,4 @@ Each phase must complete its outputs before the next phase begins.
 
 ## Memory
 
-- All corrections, lessons learned, and reusable knowledge must be recorded in: `C:\repos\Memory\memory.md`
+- All corrections, lessons learned, and reusable knowledge must be recorded in the project memory file.

@@ -1,8 +1,6 @@
 ---
-title: Testing Skill
-description: Generates and executes test plans for each application layer, validating that presentation, business logic, and backend are properly decoupled and functional.
 name: testing
-mutable: false
+description: 'Generates and executes test plans for each application layer. Use when writing tests, validating decoupling, checking coverage, or running test suites. Validates that presentation, business logic, and backend are properly decoupled and functional.'
 ---
 # Testing Skill
 

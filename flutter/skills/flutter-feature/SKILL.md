@@ -65,4 +65,4 @@ argument-hint: 'Feature name and description'
 - [ ] Swapping the page widget doesn't break the ViewModel tests.
 
 ## Reference
-- [Flutter Conventions](../conventions.md)
+- Refer to `conventions.md` in the project root for Flutter conventions.

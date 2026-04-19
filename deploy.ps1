@@ -174,11 +174,15 @@ $totalFiles += Copy-TreeSafe -Source $platformSource -Destination $Target -Label
 
 # 2. Agent template
 Write-Host "[2/5] Agent template..." -ForegroundColor Cyan
-$agentSource = Join-Path $TemplatesDir "agent.md"
+$agentSource = Join-Path $TemplatesDir "povo.agent.md"
 if (Test-Path $agentSource) {
-    $agentDest = Join-Path $Target "agent.md"
+    $agentDestDir = Join-Path $Target $Config.AgentsDir
+    if (-not (Test-Path $agentDestDir)) {
+        New-Item -ItemType Directory -Path $agentDestDir -Force | Out-Null
+    }
+    $agentDest = Join-Path $agentDestDir "povo.agent.md"
     if ((Test-Path $agentDest) -and (-not $Force)) {
-        Write-Host "  [EXISTS] agent.md - use -Force to overwrite" -ForegroundColor Yellow
+        Write-Host "  [EXISTS] povo.agent.md - use -Force to overwrite" -ForegroundColor Yellow
     } else {
         Copy-Item -Path $agentSource -Destination $agentDest -Force
         $totalFiles++

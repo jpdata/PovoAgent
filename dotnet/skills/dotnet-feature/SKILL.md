@@ -156,4 +156,4 @@ argument-hint: 'Feature name and description'
 - [ ] Swapping the Controller/ViewModel doesn't break use case tests.
 
 ## Reference
-- [.NET Conventions](../conventions.md)
+- Refer to `conventions.md` in the project root for .NET conventions.

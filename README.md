@@ -1,5 +1,14 @@
 # PovoAgent
 
+**Version:** see [VERSION](VERSION)
+
+## Versioning
+
+- Current version is defined in the `VERSION` file at the repository root.
+- Each commit increments the patch version by `0.0.1`.
+- Format follows [SemVer](https://semver.org/): `MAJOR.MINOR.PATCH`.
+- **Automated:** A pre-commit hook in `hooks/pre-commit` bumps the patch version automatically. Requires: `git config core.hooksPath hooks` (already configured for this repo).
+
 ## What Is This
 
 PovoAgent is an **AI-assisted development framework**. It provides reusable agents, skills, conventions, and platform instructions that are deployed into application projects to guide AI assistants (GitHub Copilot, Gemini, Claude) through a structured development lifecycle.
@@ -52,6 +61,7 @@ PovoAgent/
 | .NET + C#  | `dotnet/`  | Web API, MAUI, Blazor, WPF with Clean Architecture  |
 
 Each pattern contains:
+
 - `conventions.md` — coding standards, folder structure, naming rules.
 - `agents/` — specialized sub-agents (architect, reviewer, etc.).
 - `skills/` — pattern-specific skills (scaffold, feature, testing).
@@ -81,6 +91,7 @@ Each pattern contains:
 ```
 
 The deploy process:
+
 1. Copies the **platform template** (instructions file) into the target project root.
 2. Copies the **agent template** (`templates/agent.md`) into the target project.
 3. Copies **lifecycle skills** into the platform's skills location.

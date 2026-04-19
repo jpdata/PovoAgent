@@ -185,11 +185,13 @@ copy_tree_safe "$PLATFORM_SOURCE" "$TARGET" "Platform template"
 
 # 2. Agent template
 echo -e "${CYAN}[2/5] Agent template...${NC}"
-AGENT_SOURCE="$TEMPLATES_DIR/agent.md"
+AGENT_SOURCE="$TEMPLATES_DIR/povo.agent.md"
 if [[ -f "$AGENT_SOURCE" ]]; then
-    AGENT_DEST="$TARGET/agent.md"
+    AGENT_DEST_DIR="$TARGET/$AGENTS_DIR"
+    mkdir -p "$AGENT_DEST_DIR"
+    AGENT_DEST="$AGENT_DEST_DIR/povo.agent.md"
     if [[ -f "$AGENT_DEST" ]] && [[ "$FORCE" != true ]]; then
-        echo -e "  ${YELLOW}[EXISTS] agent.md - use -f to overwrite${NC}"
+        echo -e "  ${YELLOW}[EXISTS] povo.agent.md - use -f to overwrite${NC}"
     else
         cp "$AGENT_SOURCE" "$AGENT_DEST"
         TOTAL_FILES=$((TOTAL_FILES + 1))

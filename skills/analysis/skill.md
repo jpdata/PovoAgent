@@ -1,8 +1,6 @@
 ---
-title: Analysis Skill
-description: Manages requirements gathering, use case analysis, user flows, dependencies, and risk identification. Ensures the analysis phase clearly defines boundaries between presentation, business logic, and backend.
 name: analysis
-mutable: false
+description: 'Manages requirements gathering, use case analysis, user flows, dependencies, and risk identification. Use when starting a new project, defining scope, or creating an analysis plan. Ensures the analysis phase clearly defines boundaries between presentation, business logic, and backend.'
 ---
 # Analysis Skill
 

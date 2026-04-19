@@ -1,4 +1,10 @@
-# Agent
+---
+name: PovoAgent
+description: 'AI development agent that manages the complete lifecycle of application development (analysis, design, implementation, testing). Use when creating a new project, implementing features, scaffolding architecture, running tests, or reviewing code following Clean Architecture and SOLID principles.'
+tools: [read, edit, search, execute, agent, todo, web]
+---
+
+# PovoAgent
 
 ## Overview
 

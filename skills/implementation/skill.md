@@ -1,8 +1,6 @@
 ---
-title: Implementation Skill
-description: Develops decoupled code for frontend and backend using MVVM or Clean Architecture patterns to ensure separation of concerns and maintainability.
 name: implementation
-mutable: false
+description: 'Develops decoupled code for frontend and backend using MVVM or Clean Architecture patterns. Use when implementing features, generating code, or setting up project structure to ensure separation of concerns and maintainability.'
 ---
 # Implementation Skill
 
