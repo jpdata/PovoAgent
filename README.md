@@ -32,7 +32,7 @@ PovoAgent/
 ├── deploy.ps1                        <-- Deploy script (PowerShell)
 ├── deploy.sh                         <-- Deploy script (Bash)
 ├── templates/
-│   └── agent.md                      <-- Agent template (deployed to target projects)
+│   └── povo.agent.md                 <-- Agent template (deployed to target projects)
 ├── platforms/                        <-- AI platform instruction templates
 │   ├── copilot/                      <-- GitHub Copilot
 │   │   └── .github/
@@ -43,10 +43,10 @@ PovoAgent/
 │   └── claude/                       <-- Anthropic Claude
 │       └── CLAUDE.md
 ├── skills/                           <-- Generic lifecycle skills (technology-agnostic)
-│   ├── analysis/skill.md
-│   ├── design/skill.md
-│   ├── implementation/skill.md
-│   └── testing/skill.md
+│   ├── analysis/SKILL.md
+│   ├── design/SKILL.md
+│   ├── implementation/SKILL.md
+│   └── testing/SKILL.md
 └── <pattern>/                        <-- Technology pattern (deployable)
     ├── conventions.md                <-- Coding conventions & architecture rules
     ├── agents/                       <-- Pattern-specific agents (sub-agents)
@@ -92,10 +92,12 @@ Each pattern contains:
 
 The deploy process:
 
-1. Copies the **platform template** (instructions file) into the target project root.
-2. Copies the **agent template** (`templates/agent.md`) into the target project.
-3. Copies **lifecycle skills** into the platform's skills location.
-4. Copies the **pattern's conventions**, agents, and skills into their platform-specific locations.
+1. Copies the **platform template** (instructions file) into the target project.
+2. Copies the **agent template** (`templates/povo.agent.md`) into the platform's agents directory.
+3. Copies **lifecycle skills** into the platform's skills directory.
+4. Copies the **pattern's conventions** (`conventions.md`) into the target root.
+5. Copies the **pattern's agents and skills** into their platform-specific locations.
+6. Updates **`.gitignore`** in the target to exclude all deployed framework files (uses `# -- PovoAgent BEGIN/END --` markers so re-deploys update the section). If no `.git` repo is detected, a warning is shown.
 
 ## What Gets Deployed
 
@@ -105,18 +107,19 @@ After deploying `copilot + flutter` into a project, the target looks like:
 MyApp/
 ├── .github/
 │   ├── copilot-instructions.md       <-- Platform instructions
-│   ├── agents/                       <-- Pattern sub-agents
+│   ├── agents/                       <-- Main agent + pattern sub-agents
+│   │   ├── povo.agent.md
 │   │   ├── flutter-architect.agent.md
 │   │   └── flutter-reviewer.agent.md
 │   └── skills/                       <-- Lifecycle + pattern skills
-│       ├── analysis/skill.md
-│       ├── design/skill.md
-│       ├── implementation/skill.md
-│       ├── testing/skill.md
+│       ├── analysis/SKILL.md
+│       ├── design/SKILL.md
+│       ├── implementation/SKILL.md
+│       ├── testing/SKILL.md
 │       ├── flutter-scaffold/SKILL.md
 │       ├── flutter-feature/SKILL.md
 │       └── flutter-testing/SKILL.md
-├── agent.md                          <-- Main agent definition
+├── .gitignore                        <-- Updated with PovoAgent entries
 └── conventions.md                    <-- Pattern conventions
 ```
 

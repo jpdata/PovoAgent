@@ -179,12 +179,12 @@ echo -e "${GREEN}═════════════════════
 echo ""
 
 # 1. Platform instructions template
-echo -e "${CYAN}[1/5] Platform instructions (${PLATFORM})...${NC}"
+echo -e "${CYAN}[1/6] Platform instructions (${PLATFORM})...${NC}"
 PLATFORM_SOURCE="$PLATFORMS_DIR/$PLATFORM"
 copy_tree_safe "$PLATFORM_SOURCE" "$TARGET" "Platform template"
 
 # 2. Agent template
-echo -e "${CYAN}[2/5] Agent template...${NC}"
+echo -e "${CYAN}[2/6] Agent template...${NC}"
 AGENT_SOURCE="$TEMPLATES_DIR/povo.agent.md"
 if [[ -f "$AGENT_SOURCE" ]]; then
     AGENT_DEST_DIR="$TARGET/$AGENTS_DIR"
@@ -199,11 +199,11 @@ if [[ -f "$AGENT_SOURCE" ]]; then
 fi
 
 # 3. Lifecycle skills (generic)
-echo -e "${CYAN}[3/5] Lifecycle skills...${NC}"
+echo -e "${CYAN}[3/6] Lifecycle skills...${NC}"
 copy_tree_safe "$SKILLS_DIR" "$TARGET/$SKILLS_TARGET_DIR" "Lifecycle skills"
 
 # 4. Pattern conventions
-echo -e "${CYAN}[4/5] Pattern conventions (${PATTERN})...${NC}"
+echo -e "${CYAN}[4/6] Pattern conventions (${PATTERN})...${NC}"
 PATTERN_DIR="$SCRIPT_DIR/$PATTERN"
 CONVENTIONS_SOURCE="$PATTERN_DIR/conventions.md"
 if [[ -f "$CONVENTIONS_SOURCE" ]]; then
@@ -219,9 +219,96 @@ else
 fi
 
 # 5. Pattern agents & skills
-echo -e "${CYAN}[5/5] Pattern agents & skills (${PATTERN})...${NC}"
+echo -e "${CYAN}[5/6] Pattern agents & skills (${PATTERN})...${NC}"
 copy_tree_safe "$PATTERN_DIR/agents" "$TARGET/$AGENTS_DIR" "Pattern agents"
 copy_tree_safe "$PATTERN_DIR/skills" "$TARGET/$SKILLS_TARGET_DIR" "Pattern skills"
+
+# 6. Update .gitignore
+echo -e "${CYAN}[6/6] Updating .gitignore...${NC}"
+
+if [[ ! -d "$TARGET/.git" ]]; then
+    echo -e "  ${YELLOW}[WARN] No git repository detected at '$TARGET'.${NC}"
+    echo -e "  ${YELLOW}       Run 'git init' first so .gitignore takes effect.${NC}"
+fi
+
+# Collect deployed paths relative to target
+IGNORE_ENTRIES=()
+
+# Platform template files
+if [[ -d "$PLATFORM_SOURCE" ]]; then
+    while IFS= read -r -d '' file; do
+        rel="${file#"$PLATFORM_SOURCE"/}"
+        IGNORE_ENTRIES+=("/$rel")
+    done < <(find "$PLATFORM_SOURCE" -type f -print0)
+fi
+
+# Main agent
+IGNORE_ENTRIES+=("/$AGENTS_DIR/povo.agent.md")
+
+# Lifecycle skills (as directories)
+if [[ -d "$SKILLS_DIR" ]]; then
+    while IFS= read -r -d '' dir; do
+        dirname="$(basename "$dir")"
+        IGNORE_ENTRIES+=("/$SKILLS_TARGET_DIR/$dirname/")
+    done < <(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
+fi
+
+# Conventions
+IGNORE_ENTRIES+=("/conventions.md")
+
+# Pattern agents
+PATTERN_AGENTS_DIR="$PATTERN_DIR/agents"
+if [[ -d "$PATTERN_AGENTS_DIR" ]]; then
+    while IFS= read -r -d '' file; do
+        rel="${file#"$PATTERN_AGENTS_DIR"/}"
+        IGNORE_ENTRIES+=("/$AGENTS_DIR/$rel")
+    done < <(find "$PATTERN_AGENTS_DIR" -type f -print0)
+fi
+
+# Pattern skills (as directories)
+PATTERN_SKILLS_DIR="$PATTERN_DIR/skills"
+if [[ -d "$PATTERN_SKILLS_DIR" ]]; then
+    while IFS= read -r -d '' dir; do
+        dirname="$(basename "$dir")"
+        IGNORE_ENTRIES+=("/$SKILLS_TARGET_DIR/$dirname/")
+    done < <(find "$PATTERN_SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
+fi
+
+# Sort and deduplicate
+mapfile -t IGNORE_ENTRIES < <(printf '%s\n' "${IGNORE_ENTRIES[@]}" | sort -u)
+
+# Write to .gitignore with markers
+GITIGNORE_PATH="$TARGET/.gitignore"
+MARKER_BEGIN="# -- PovoAgent BEGIN --"
+MARKER_END="# -- PovoAgent END --"
+
+# Build new block
+NEW_BLOCK="$MARKER_BEGIN"
+for entry in "${IGNORE_ENTRIES[@]}"; do
+    NEW_BLOCK="$NEW_BLOCK"$'\n'"$entry"
+done
+NEW_BLOCK="$NEW_BLOCK"$'\n'"$MARKER_END"
+
+if [[ -f "$GITIGNORE_PATH" ]]; then
+    if grep -qF "$MARKER_BEGIN" "$GITIGNORE_PATH"; then
+        # Replace existing block
+        tmpfile=$(mktemp)
+        awk -v begin="$MARKER_BEGIN" -v end="$MARKER_END" -v block="$NEW_BLOCK" '
+            $0 == begin { print block; skip=1; next }
+            $0 == end { skip=0; next }
+            !skip { print }
+        ' "$GITIGNORE_PATH" > "$tmpfile"
+        mv "$tmpfile" "$GITIGNORE_PATH"
+        echo -e "  ${WHITE}[UPDATED] .gitignore (PovoAgent section replaced)${NC}"
+    else
+        # Append new block
+        printf '\n%s\n' "$NEW_BLOCK" >> "$GITIGNORE_PATH"
+        echo -e "  ${WHITE}[UPDATED] .gitignore (PovoAgent section added)${NC}"
+    fi
+else
+    printf '%s\n' "$NEW_BLOCK" > "$GITIGNORE_PATH"
+    echo -e "  ${WHITE}[CREATED] .gitignore${NC}"
+fi
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""

@@ -168,12 +168,12 @@ Write-Host ""
 $totalFiles = 0
 
 # 1. Platform instructions template
-Write-Host "[1/5] Platform instructions ($Platform)..." -ForegroundColor Cyan
+Write-Host "[1/6] Platform instructions ($Platform)..." -ForegroundColor Cyan
 $platformSource = Join-Path $PlatformsDir $Platform
 $totalFiles += Copy-TreeSafe -Source $platformSource -Destination $Target -Label "Platform template"
 
 # 2. Agent template
-Write-Host "[2/5] Agent template..." -ForegroundColor Cyan
+Write-Host "[2/6] Agent template..." -ForegroundColor Cyan
 $agentSource = Join-Path $TemplatesDir "povo.agent.md"
 if (Test-Path $agentSource) {
     $agentDestDir = Join-Path $Target $Config.AgentsDir
@@ -190,12 +190,12 @@ if (Test-Path $agentSource) {
 }
 
 # 3. Lifecycle skills (generic)
-Write-Host "[3/5] Lifecycle skills..." -ForegroundColor Cyan
+Write-Host "[3/6] Lifecycle skills..." -ForegroundColor Cyan
 $targetSkills = Join-Path $Target $Config.SkillsDir
 $totalFiles += Copy-TreeSafe -Source $SkillsDir -Destination $targetSkills -Label "Lifecycle skills"
 
 # 4. Pattern conventions
-Write-Host "[4/5] Pattern conventions ($Pattern)..." -ForegroundColor Cyan
+Write-Host "[4/6] Pattern conventions ($Pattern)..." -ForegroundColor Cyan
 $patternDir = Join-Path $ScriptRoot $Pattern
 $conventionsSource = Join-Path $patternDir "conventions.md"
 if (Test-Path $conventionsSource) {
@@ -211,13 +211,87 @@ if (Test-Path $conventionsSource) {
 }
 
 # 5. Pattern agents and skills
-Write-Host "[5/5] Pattern agents and skills ($Pattern)..." -ForegroundColor Cyan
+Write-Host "[5/6] Pattern agents and skills ($Pattern)..." -ForegroundColor Cyan
 $patternAgents = Join-Path $patternDir "agents"
 $patternSkills = Join-Path $patternDir "skills"
 $targetAgents  = Join-Path $Target $Config.AgentsDir
 
 $totalFiles += Copy-TreeSafe -Source $patternAgents -Destination $targetAgents -Label "Pattern agents"
 $totalFiles += Copy-TreeSafe -Source $patternSkills -Destination $targetSkills -Label "Pattern skills"
+
+# 6. Update .gitignore
+Write-Host "[6/6] Updating .gitignore..." -ForegroundColor Cyan
+
+$gitDir = Join-Path $Target ".git"
+if (-not (Test-Path $gitDir)) {
+    Write-Host "  [WARN] No git repository detected at '$Target'." -ForegroundColor Yellow
+    Write-Host "         Run 'git init' first so .gitignore takes effect." -ForegroundColor Yellow
+}
+
+# Collect deployed paths relative to target
+$ignoreEntries = @()
+
+# Platform template files (e.g., .github/copilot-instructions.md)
+if (Test-Path $platformSource) {
+    Get-ChildItem -Path $platformSource -Recurse -File | ForEach-Object {
+        $rel = $_.FullName.Substring($platformSource.Length).TrimStart('\', '/') -replace '\\', '/'
+        $ignoreEntries += "/$rel"
+    }
+}
+
+# Main agent
+$ignoreEntries += "/$($Config.AgentsDir -replace '\\', '/')/povo.agent.md"
+
+# Lifecycle skills (as directories)
+if (Test-Path $SkillsDir) {
+    Get-ChildItem -Path $SkillsDir -Directory | ForEach-Object {
+        $ignoreEntries += "/$($Config.SkillsDir -replace '\\', '/')/$($_.Name)/"
+    }
+}
+
+# Conventions
+$ignoreEntries += "/conventions.md"
+
+# Pattern agents
+$patternAgentsDir = Join-Path $patternDir "agents"
+if (Test-Path $patternAgentsDir) {
+    Get-ChildItem -Path $patternAgentsDir -Recurse -File | ForEach-Object {
+        $rel = $_.FullName.Substring($patternAgentsDir.Length).TrimStart('\', '/') -replace '\\', '/'
+        $ignoreEntries += "/$($Config.AgentsDir -replace '\\', '/')/$rel"
+    }
+}
+
+# Pattern skills (as directories)
+$patternSkillsDir = Join-Path $patternDir "skills"
+if (Test-Path $patternSkillsDir) {
+    Get-ChildItem -Path $patternSkillsDir -Directory | ForEach-Object {
+        $ignoreEntries += "/$($Config.SkillsDir -replace '\\', '/')/$($_.Name)/"
+    }
+}
+
+# Write to .gitignore with markers
+$gitignorePath = Join-Path $Target ".gitignore"
+$markerBegin = "# -- PovoAgent BEGIN --"
+$markerEnd   = "# -- PovoAgent END --"
+$newBlock     = @($markerBegin) + ($ignoreEntries | Sort-Object -Unique) + @($markerEnd)
+
+if (Test-Path $gitignorePath) {
+    $content = Get-Content $gitignorePath -Raw
+    if ($content -match [regex]::Escape($markerBegin)) {
+        # Replace existing block
+        $replacePattern = "(?s)" + [regex]::Escape($markerBegin) + ".*?" + [regex]::Escape($markerEnd)
+        $content = [regex]::Replace($content, $replacePattern, ($newBlock -join "`n"))
+        Set-Content -Path $gitignorePath -Value $content -NoNewline
+        Write-Host "  [UPDATED] .gitignore (PovoAgent section replaced)" -ForegroundColor White
+    } else {
+        # Append new block
+        Add-Content -Path $gitignorePath -Value ("`n" + ($newBlock -join "`n") + "`n")
+        Write-Host "  [UPDATED] .gitignore (PovoAgent section added)" -ForegroundColor White
+    }
+} else {
+    Set-Content -Path $gitignorePath -Value (($newBlock -join "`n") + "`n")
+    Write-Host "  [CREATED] .gitignore" -ForegroundColor White
+}
 
 # ── Summary ──────────────────────────────────────────────────────────────────
 Write-Host ""
