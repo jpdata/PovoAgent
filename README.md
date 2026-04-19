@@ -58,7 +58,7 @@ PovoAgent/
 | Pattern    | Folder     | Description                                          |
 |------------|------------|------------------------------------------------------|
 | Flutter    | `flutter/` | Cross-platform mobile with Dart & Clean Architecture |
-| .NET + C#  | `dotnet/`  | Web API, MAUI, Blazor, WPF with Clean Architecture  |
+| .NET + C#  | `dotnet/`  | Web API, MAUI, Blazor, WPF with Clean Architecture   |
 
 Each pattern contains:
 
