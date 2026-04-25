@@ -26,7 +26,7 @@ When starting a new project, run the deploy script to combine a **platform** + *
 
 ## Repository Structure
 
-```
+```text
 PovoAgent/
 ├── README.md                         <-- This file (framework documentation)
 ├── deploy.ps1                        <-- Deploy script (PowerShell)
@@ -55,10 +55,16 @@ PovoAgent/
 
 ## Available Patterns
 
-| Pattern    | Folder     | Description                                          |
-|------------|------------|------------------------------------------------------|
-| Flutter    | `flutter/` | Cross-platform mobile with Dart & Clean Architecture |
-| .NET + C#  | `dotnet/`  | Web API, MAUI, Blazor, WPF with Clean Architecture   |
+- Flutter: `flutter/`.
+    Description: Cross-platform mobile with Dart and Clean Architecture.
+- .NET + C#: `dotnet/`.
+    Description: Web API, MAUI, Blazor, and WPF with Clean Architecture.
+- Angular: `angular/`.
+    Description: Modern Angular frontend with standalone APIs, signals, and optional SSR or hybrid rendering.
+- React: `react/`.
+    Description: Modern React frontend with feature-first boundaries, predictable state flow, and framework-or-Vite project setup depending on project needs.
+- Astro: `astro/`.
+    Description: Modern Astro frontend with islands architecture, file-based routing, content collections, and optional React islands for selective interactivity.
 
 Each pattern contains:
 
@@ -80,6 +86,9 @@ Each pattern contains:
 # PowerShell (Windows)
 .\deploy.ps1 -Platform copilot -Pattern flutter -Target C:\Projects\MyApp
 .\deploy.ps1                           # interactive mode
+.\deploy.ps1 -Platform copilot -Pattern angular -Target C:\Projects\Portal
+.\deploy.ps1 -Platform copilot -Pattern react -Target C:\Projects\Console
+.\deploy.ps1 -Platform copilot -Pattern astro -Target C:\Projects\MarketingSite
 .\deploy.ps1 -Platform claude -Pattern dotnet -Target C:\Projects\Api -Force
 ```
 
@@ -87,6 +96,9 @@ Each pattern contains:
 # Bash (Linux/macOS)
 ./deploy.sh -p copilot -t flutter -d /path/to/project
 ./deploy.sh                            # interactive mode
+./deploy.sh -p copilot -t angular -d /path/to/portal
+./deploy.sh -p copilot -t react -d /path/to/console
+./deploy.sh -p copilot -t astro -d /path/to/site
 ./deploy.sh -p gemini -t dotnet -d /path/to/project -f
 ```
 
@@ -103,7 +115,7 @@ The deploy process:
 
 After deploying `copilot + flutter` into a project, the target looks like:
 
-```
+```text
 MyApp/
 ├── .github/
 │   ├── copilot-instructions.md       <-- Platform instructions

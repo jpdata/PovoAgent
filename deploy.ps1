@@ -11,7 +11,7 @@
     AI platform to deploy: copilot | gemini | claude.
 
 .PARAMETER Pattern
-    Technology pattern to deploy: flutter | dotnet.
+    Technology pattern to deploy: flutter | dotnet | angular | react | astro.
 
 .PARAMETER Target
     Absolute path to the target project folder.

@@ -35,7 +35,7 @@ while getopts "p:t:d:fh" opt; do
         h)
             echo "Usage: $0 [-p platform] [-t pattern] [-d target] [-f]"
             echo "  -p  AI platform: copilot | gemini | claude"
-            echo "  -t  Technology pattern: flutter | dotnet"
+            echo "  -t  Technology pattern: flutter | dotnet | angular | react | astro"
             echo "  -d  Target project path"
             echo "  -f  Force overwrite existing files"
             exit 0
