@@ -49,15 +49,19 @@ Apply well-known design patterns where they solve a real problem. Do not force p
 Each project follows these phases in order. A phase must produce its defined outputs before the next phase begins.
 
 ```
-Analysis --> Design --> Implementation --> Testing
+Kickoff --> Planning --> Analysis --> Design --> Scaffold --> Implementation --> Testing --> Review
 ```
 
-| Phase          | Skill            | Input                 | Output                         |
-|----------------|------------------|-----------------------|--------------------------------|
-| Analysis       | analysis         | User requirements     | Analysis plan document         |
-| Design         | design           | Analysis plan         | Architecture & API design docs |
-| Implementation | implementation   | Design docs           | Working decoupled code         |
-| Testing        | testing          | Code + design docs    | Test reports & validation      |
+| # | Phase          | Skill / Agent                        | Input                          | Output                             | Gate                        |
+|---|----------------|--------------------------------------|--------------------------------|------------------------------------|-----------------------------|
+| 1 | Kickoff        | `kickoff`                            | User conversation              | `PROJECT_INTAKE.md`                | User confirms intake        |
+| 2 | Planning       | `planning`                           | Intake + Analysis Plan         | `PROJECT_PLAN.md`                  | User approves plan          |
+| 3 | Analysis       | `analysis`                           | `PROJECT_INTAKE.md`            | Analysis Plan document             | Plan reviewed               |
+| 4 | Design         | `design` + Architect agent           | Analysis Plan                  | Architecture & API design docs     | Design approved             |
+| 5 | Scaffold       | `<pattern>-scaffold`                 | Design docs                    | Initialized project structure      | Structure compiles          |
+| 6 | Implementation | `implementation` + `<pattern>-feature` | Design docs                  | Working decoupled code             | All features pass           |
+| 7 | Testing        | `testing` + `<pattern>-testing`      | Code + Design docs             | Test suite + reports               | Coverage met                |
+| 8 | Review         | `review` + Reviewer agent            | Code + conventions             | Review report & fixes              | No blocking violations      |
 
 ## Sub-Agents
 
@@ -69,24 +73,42 @@ This agent delegates specialized work to pattern-specific sub-agents:
 ## Skills
 
 ### Lifecycle Skills (all patterns)
+- **kickoff** - Interactive project onboarding; produces `PROJECT_INTAKE.md`.
+- **planning** - Generates `PROJECT_PLAN.md` with Mermaid diagram, phase table, and milestones.
 - **analysis** - Requirements gathering and analysis plan creation.
 - **design** - Architecture and API design documents.
 - **implementation** - Code generation following conventions.
 - **testing** - Test generation and decoupling validation.
+- **review** - Structured code review: SOLID, decoupling, conventions, and pattern correctness.
 
 ### Pattern Skills (technology-specific)
-- **scaffold** - Initialize a new project with the correct structure.
+- **scaffold** - Initialize a new project with the correct folder and layer structure.
 - **feature** - Create a feature end-to-end across all layers.
 - **testing** - Technology-specific test generation and validation.
 
 ## Workflow
 
-1. User describes a requirement.
-2. Agent invokes the **analysis** skill to produce a plan.
-3. Agent invokes the **design** skill (may delegate to the **architect** sub-agent).
-4. Agent invokes the **implementation** skill using pattern conventions.
-5. Agent invokes the **testing** skill (may delegate to the **reviewer** sub-agent for validation).
-6. Agent reports results.
+### New Project
+
+1. Agent invokes the **kickoff** skill to gather project information and produce `PROJECT_INTAKE.md`.
+2. Agent invokes the **analysis** skill to produce the Analysis Plan.
+3. Agent invokes the **planning** skill to produce `PROJECT_PLAN.md`. User approves before continuing.
+4. Agent invokes the **design** skill (delegates to the **architect** sub-agent) to produce architecture and API docs.
+5. Agent invokes the pattern **scaffold** skill to initialize the project structure.
+6. Agent invokes the **implementation** skill (uses pattern **feature** skill per feature) to build decoupled code.
+7. Agent invokes the **testing** skill (uses pattern **testing** skill) to validate behavior per layer.
+8. Agent invokes the **review** skill (delegates to the **reviewer** sub-agent) to validate SOLID, decoupling, and conventions.
+9. Agent reports results and marks milestones in `PROJECT_PLAN.md`.
+
+### Existing Project (feature or change request)
+
+1. Agent reads existing `PROJECT_INTAKE.md` and `PROJECT_PLAN.md` if present.
+2. Agent invokes the **analysis** skill scoped to the new requirement.
+3. Agent invokes the **design** skill to update affected contracts or architecture.
+4. Agent invokes the pattern **feature** skill to implement the change.
+5. Agent invokes the **testing** skill to validate the change.
+6. Agent invokes the **review** skill to validate compliance.
+7. Agent updates milestones in `PROJECT_PLAN.md`.
 
 ## Language Rules
 

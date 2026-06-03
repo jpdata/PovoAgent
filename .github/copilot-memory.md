@@ -23,3 +23,12 @@
 ## Carry-Over
 
 - None.
+
+## Lifecycle Changes (2026-06-03)
+
+- Added `skills/kickoff/SKILL.md`: interactive onboarding, 5-block conversation, produces `PROJECT_INTAKE.md`.
+- Added `skills/planning/SKILL.md`: generates `PROJECT_PLAN.md` with Mermaid diagram, phase table (8 phases), milestone checklist, risk register.
+- Full lifecycle is now: Kickoff → Planning → Analysis → Design → Scaffold → Implementation → Testing → Review.
+- Scaffold is now an explicit lifecycle phase (was only a pattern-specific skill before).
+- Both `templates/povo.agent.md` and `templates/opencode/povo.agent.md` updated to reflect the 8-phase lifecycle and split workflow (new project vs. existing project).
+- Added `Docs/new-project-lifecycle.md` documenting the complete flow, artifact map, cross-platform table, cross-pattern table, and milestone checklist template.
