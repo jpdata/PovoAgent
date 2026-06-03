@@ -133,6 +133,79 @@ function Copy-TreeSafe {
     return $count
 }
 
+# ── OpenCode agent conversion ─────────────────────────────────────────────────
+# Copies pattern agents to target, converting Copilot-format frontmatter
+# (tools: [...] array) into opencode-compatible (mode/permission) format.
+function Copy-AgentsForOpencode {
+    param([string]$Source, [string]$Destination)
+    if (-not (Test-Path $Source)) {
+        Write-Host "  [SKIP] Pattern agents - source not found: $Source" -ForegroundColor DarkGray
+        return 0
+    }
+    $count = 0
+    # Copilot tool name -> opencode permission key(s)
+    $toolMap = @{
+        read    = @('read')
+        edit    = @('edit')
+        search  = @('grep','glob','list')
+        web     = @('webfetch','websearch')
+        execute = @('bash')
+        todo    = @('todowrite')
+    }
+    $permOrder = @('read','edit','glob','grep','list','bash','task','webfetch','websearch','skill','todowrite')
+
+    $items = Get-ChildItem -Path $Source -Recurse -File
+    foreach ($item in $items) {
+        $relativePath = $item.FullName.Substring($Source.Length).TrimStart('\', '/')
+        $destFile     = Join-Path $Destination $relativePath
+        $destDir      = Split-Path -Parent $destFile
+
+        if ((Test-Path $destFile) -and (-not $Force)) {
+            Write-Host "  [EXISTS] $relativePath - use -Force to overwrite" -ForegroundColor Yellow
+            continue
+        }
+        if (-not (Test-Path $destDir)) {
+            New-Item -ItemType Directory -Path $destDir -Force | Out-Null
+        }
+
+        $content = Get-Content $item.FullName -Raw
+
+        # Transform Copilot-format frontmatter when tools: [...] array is present
+        $fmRx = [regex]::Match($content, '(?s)^---\r?\n(.*?)\r?\n---\r?\n(.*)')
+        if ($fmRx.Success) {
+            $fm   = $fmRx.Groups[1].Value
+            $body = $fmRx.Groups[2].Value
+            $toolsRx = [regex]::Match($fm, 'tools\s*:\s*\[([^\]]*)\]')
+            if ($toolsRx.Success) {
+                $copilotTools = ($toolsRx.Groups[1].Value -split ',') |
+                    ForEach-Object { $_.Trim() } | Where-Object { $_ }
+
+                # Build allow set
+                $allowed = @{}
+                foreach ($p in $permOrder) { $allowed[$p] = 'deny' }
+                foreach ($t in $copilotTools) {
+                    if ($toolMap.ContainsKey($t)) {
+                        foreach ($p in $toolMap[$t]) { $allowed[$p] = 'allow' }
+                    }
+                }
+
+                # Remove tools line; add mode and permission block
+                $fm = [regex]::Replace($fm, '\r?\ntools\s*:\s*\[[^\]]*\]', '').TrimEnd()
+                if ($fm -notmatch 'mode\s*:') { $fm += "`nmode: subagent" }
+                $permLines = @('permission:')
+                foreach ($p in $permOrder) { $permLines += "  ${p}: $($allowed[$p])" }
+                $fm += "`n" + ($permLines -join "`n")
+                $content = "---`n${fm}`n---`n${body}"
+                Write-Host "  [CONVERTED] $relativePath" -ForegroundColor DarkGray
+            }
+        }
+
+        Set-Content -Path $destFile -Value $content -NoNewline
+        $count++
+    }
+    return $count
+}
+
 # ── Platform-specific deploy target mapping ──────────────────────────────────
 # Each platform defines where agents and skills land in the target project.
 $PlatformConfig = @{
@@ -221,7 +294,11 @@ $patternAgents = Join-Path $patternDir "agents"
 $patternSkills = Join-Path $patternDir "skills"
 $targetAgents  = Join-Path $Target $Config.AgentsDir
 
-$totalFiles += Copy-TreeSafe -Source $patternAgents -Destination $targetAgents -Label "Pattern agents"
+if ($Platform -eq "opencode") {
+    $totalFiles += Copy-AgentsForOpencode -Source $patternAgents -Destination $targetAgents
+} else {
+    $totalFiles += Copy-TreeSafe -Source $patternAgents -Destination $targetAgents -Label "Pattern agents"
+}
 $totalFiles += Copy-TreeSafe -Source $patternSkills -Destination $targetSkills -Label "Pattern skills"
 
 # 6. Update .gitignore
