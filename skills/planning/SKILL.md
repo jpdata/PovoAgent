@@ -69,7 +69,8 @@ flowchart LR
     KO([Kickoff]) --> PL([Planning])
     PL --> AN([Analysis])
     AN --> DE([Design])
-    DE --> SC([Scaffold])
+    DE --> SP([Specification])
+    SP --> SC([Scaffold])
     SC --> IM([Implementation])
     IM --> TE([Testing])
     TE --> RE([Review])
@@ -78,6 +79,7 @@ flowchart LR
     style PL fill:#4a90d9,color:#fff
     style AN fill:#7b68ee,color:#fff
     style DE fill:#7b68ee,color:#fff
+    style SP fill:#e87722,color:#fff
     style SC fill:#50c878,color:#fff
     style IM fill:#50c878,color:#fff
     style TE fill:#f4a460,color:#fff
@@ -92,10 +94,11 @@ flowchart LR
 | 2 | Planning | `planning` | Intake + Analysis Plan | `PROJECT_PLAN.md` | User approves plan |
 | 3 | Analysis | `analysis` | Intake doc | Analysis Plan | Plan reviewed |
 | 4 | Design | `design` + Architect agent | Analysis Plan | Architecture + API docs | Design approved |
-| 5 | Scaffold | `<pattern>-scaffold` | Design docs | Initialized project structure | Structure compiles |
-| 6 | Implementation | `implementation` + `<pattern>-feature` | Design docs | Working decoupled code | All features pass |
-| 7 | Testing | `testing` + `<pattern>-testing` | Code + Design docs | Test suite + Reports | Coverage met |
-| 8 | Review | `review` + Reviewer agent | Code + Conventions | Review Report | No blocking items |
+| 5 | Specification | `specification` + `<pattern>-spec` | Design Document | `SPEC_<Feature>.md` per feature | All specs approved |
+| 6 | Scaffold | `<pattern>-scaffold` | Design + Spec docs | Initialized project structure | Structure compiles |
+| 7 | Implementation | `implementation` + `<pattern>-feature` | Spec docs + Design docs | Working decoupled code | All features pass |
+| 8 | Testing | `testing` + `<pattern>-testing` | Spec docs + Code | Test suite + Reports | Coverage met |
+| 9 | Review | `review` + Reviewer agent | Code + Specs + Conventions | Review Report | No blocking items |
 
 ## Milestones
 
@@ -103,10 +106,11 @@ flowchart LR
 - [ ] **M2 — Plan approved:** `PROJECT_PLAN.md` confirmed by user.
 - [ ] **M3 — Analysis complete:** Analysis Plan reviewed and approved.
 - [ ] **M4 — Design approved:** Architecture and API contracts approved.
-- [ ] **M5 — Scaffold complete:** Project compiles with correct layer structure.
-- [ ] **M6 — Implementation complete:** All core features implemented and decoupled.
-- [ ] **M7 — Tests passing:** All unit and integration tests pass; coverage met.
-- [ ] **M8 — Review approved:** No blocking violations remain.
+- [ ] **M5 — Specs approved:** All `SPEC_<Feature>.md` documents confirmed by user. No open questions remain.
+- [ ] **M6 — Scaffold complete:** Project compiles with correct layer structure.
+- [ ] **M7 — Implementation complete:** All core features implemented, traceable to specs.
+- [ ] **M8 — Tests passing:** All unit and integration tests pass; every spec AC covered.
+- [ ] **M9 — Review approved:** No blocking violations remain.
 
 ## Risk Register
 
@@ -140,7 +144,7 @@ When generating the plan, assess which phases apply:
 
 ## Acceptance Criteria
 
-- The Mermaid diagram renders all 8 phases correctly.
+- The Mermaid diagram renders all 9 phases correctly.
 - The phase table has no empty cells for active (non-skipped) phases.
 - All milestones are listed and unchecked at plan creation.
 - The risk register contains at least the risks identified in the intake.
@@ -153,4 +157,4 @@ This skill generates Markdown with Mermaid diagrams. Mermaid renders natively in
 
 ## Cross-Pattern Note
 
-The Phase Table references the active pattern's scaffold, feature, and testing skills using the placeholder `<pattern>`. When generating the document, replace `<pattern>` with the actual pattern name (e.g., `flutter-scaffold`, `react-feature`, `dotnet-testing`).
+The Phase Table references the active pattern's scaffold, feature, testing, and spec skills using the placeholder `<pattern>`. When generating the document, replace `<pattern>` with the actual pattern name (e.g., `flutter-scaffold`, `react-feature`, `dotnet-testing`, `react-spec`).

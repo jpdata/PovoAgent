@@ -8,17 +8,20 @@ description: 'Develops decoupled code for frontend and backend using MVVM or Cle
 Develop decoupled code for front and back, applying patterns such as MVVM or Clean Architecture.
 
 ## Workflow
-1. Review the Design Document.
-2. Set up project structure following decoupled architecture.
-3. Implement data models and repository layer.
-4. Implement business logic (use cases / services).
-5. Implement API integration layer.
-6. Implement presentation layer (UI) independently.
-7. Wire layers together through dependency injection or service locators.
-8. Verify that each layer compiles and works independently.
+1. Read all approved `SPEC_<Feature>.md` documents for the features being implemented.
+2. Review the Design Document to confirm architecture, API contracts, and layer boundaries.
+3. Set up project structure following decoupled architecture.
+4. Implement data models and repository layer, tracing each to the spec's data model reference.
+5. Implement business logic (use cases / services), covering every scenario in the relevant spec.
+6. Implement API integration layer using contracts defined in the spec's API/contract reference.
+7. Implement presentation layer (UI) independently, covering all state scenarios from the spec.
+8. Wire layers together through dependency injection or service locators.
+9. Verify that each layer compiles and works independently.
+10. Confirm every spec acceptance criterion has a corresponding implementation path.
 
 ## Inputs
-- Design Document (architecture, API contracts, data models).
+- **Specification Documents** (`SPEC_<Feature>.md`) — primary behavioral reference for all code written.
+- **Design Document** (architecture, API contracts, data models) — structural reference.
 
 ## Outputs
 - **Working decoupled code** with:
@@ -40,6 +43,7 @@ Develop decoupled code for front and back, applying patterns such as MVVM or Cle
 - Presentation can be replaced without modifying business logic.
 - API layer uses contracts/interfaces, not concrete implementations.
 - Folder structure matches the Design Document.
+- Every spec acceptance criterion has a traceable implementation path.
 - SOLID principles are applied in every class and module.
 - Required design patterns (Repository, DI, Use Case) are implemented correctly.
 
