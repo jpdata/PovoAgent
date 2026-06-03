@@ -151,17 +151,19 @@ copy_tree_safe() {
 # ── Platform-specific deploy targets ────────────────────────────────────────
 get_agents_dir() {
     case "$1" in
-        copilot) echo ".github/agents" ;;
-        gemini)  echo ".gemini/agents" ;;
-        claude)  echo ".claude/agents" ;;
+        copilot)  echo ".github/agents" ;;
+        gemini)   echo ".gemini/agents" ;;
+        claude)   echo ".claude/agents" ;;
+        opencode) echo ".opencode/agents" ;;
     esac
 }
 
 get_skills_dir() {
     case "$1" in
-        copilot) echo ".github/skills" ;;
-        gemini)  echo ".gemini/skills" ;;
-        claude)  echo ".claude/skills" ;;
+        copilot)  echo ".github/skills" ;;
+        gemini)   echo ".gemini/skills" ;;
+        claude)   echo ".claude/skills" ;;
+        opencode) echo ".opencode/skills" ;;
     esac
 }
 
@@ -185,7 +187,12 @@ copy_tree_safe "$PLATFORM_SOURCE" "$TARGET" "Platform template"
 
 # 2. Agent template
 echo -e "${CYAN}[2/6] Agent template...${NC}"
-AGENT_SOURCE="$TEMPLATES_DIR/povo.agent.md"
+PLATFORM_AGENT_SOURCE="$TEMPLATES_DIR/$PLATFORM/povo.agent.md"
+if [[ -f "$PLATFORM_AGENT_SOURCE" ]]; then
+    AGENT_SOURCE="$PLATFORM_AGENT_SOURCE"
+else
+    AGENT_SOURCE="$TEMPLATES_DIR/povo.agent.md"
+fi
 if [[ -f "$AGENT_SOURCE" ]]; then
     AGENT_DEST_DIR="$TARGET/$AGENTS_DIR"
     mkdir -p "$AGENT_DEST_DIR"

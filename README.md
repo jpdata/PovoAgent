@@ -11,7 +11,7 @@
 
 ## What Is This
 
-PovoAgent is an **AI-assisted development framework**. It provides reusable agents, skills, conventions, and platform instructions that are deployed into application projects to guide AI assistants (GitHub Copilot, Gemini, Claude) through a structured development lifecycle.
+PovoAgent is an **AI-assisted development framework**. It provides reusable agents, skills, conventions, and platform instructions that are deployed into application projects to guide AI assistants (GitHub Copilot, Gemini, Claude, OpenCode) through a structured development lifecycle.
 
 This repository is **not** an application. It is a template factory.
 
@@ -32,7 +32,9 @@ PovoAgent/
 ├── deploy.ps1                        <-- Deploy script (PowerShell)
 ├── deploy.sh                         <-- Deploy script (Bash)
 ├── templates/
-│   └── povo.agent.md                 <-- Agent template (deployed to target projects)
+│   ├── povo.agent.md                 <-- Agent template (copilot/gemini/claude)
+│   └── opencode/
+│       └── povo.agent.md             <-- Agent template (opencode, opencode frontmatter)
 ├── platforms/                        <-- AI platform instruction templates
 │   ├── copilot/                      <-- GitHub Copilot
 │   │   └── .github/
@@ -40,8 +42,11 @@ PovoAgent/
 │   ├── gemini/                       <-- Google Gemini
 │   │   └── .gemini/
 │   │       └── styleguide.md
-│   └── claude/                       <-- Anthropic Claude
-│       └── CLAUDE.md
+│   ├── claude/                       <-- Anthropic Claude
+│   │   └── CLAUDE.md
+│   └── opencode/                     <-- OpenCode
+│       ├── AGENTS.md
+│       └── opencode.json
 ├── skills/                           <-- Generic lifecycle skills (technology-agnostic)
 │   ├── analysis/SKILL.md
 │   ├── design/SKILL.md
@@ -79,6 +84,7 @@ Each pattern contains:
 | GitHub Copilot   | `platforms/copilot/` | `.github/copilot-instructions.md` | Markdown with `#` sections    |
 | Google Gemini    | `platforms/gemini/`  | `.gemini/styleguide.md`           | Markdown style guide          |
 | Anthropic Claude | `platforms/claude/`  | `CLAUDE.md` (project root)        | Markdown project instructions |
+| OpenCode         | `platforms/opencode/`| `AGENTS.md` + `opencode.json`     | Markdown + JSON config        |
 
 ## Deploy
 
@@ -90,6 +96,7 @@ Each pattern contains:
 .\deploy.ps1 -Platform copilot -Pattern react -Target C:\Projects\Console
 .\deploy.ps1 -Platform copilot -Pattern astro -Target C:\Projects\MarketingSite
 .\deploy.ps1 -Platform claude -Pattern dotnet -Target C:\Projects\Api -Force
+.\deploy.ps1 -Platform opencode -Pattern react -Target C:\Projects\MyReactApp
 ```
 
 ```bash
@@ -100,6 +107,7 @@ Each pattern contains:
 ./deploy.sh -p copilot -t react -d /path/to/console
 ./deploy.sh -p copilot -t astro -d /path/to/site
 ./deploy.sh -p gemini -t dotnet -d /path/to/project -f
+./deploy.sh -p opencode -t react -d /path/to/project
 ```
 
 The deploy process:
@@ -112,6 +120,30 @@ The deploy process:
 6. Updates **`.gitignore`** in the target to exclude all deployed framework files (uses `# -- PovoAgent BEGIN/END --` markers so re-deploys update the section). If no `.git` repo is detected, a warning is shown.
 
 ## What Gets Deployed
+
+After deploying `opencode + react` into a project, the target looks like:
+
+```text
+MyReactApp/
+├── .opencode/
+│   ├── agents/                       <-- Main agent + pattern sub-agents
+│   │   ├── povo.agent.md
+│   │   ├── react-architect.agent.md
+│   │   ├── react-developer.agent.md
+│   │   └── react-reviewer.agent.md
+│   └── skills/                       <-- Lifecycle + pattern skills
+│       ├── analysis/SKILL.md
+│       ├── design/SKILL.md
+│       ├── implementation/SKILL.md
+│       ├── testing/SKILL.md
+│       ├── react-scaffold/SKILL.md
+│       ├── react-feature/SKILL.md
+│       └── react-testing/SKILL.md
+├── AGENTS.md                         <-- Platform instructions
+├── opencode.json                     <-- OpenCode project config
+├── .gitignore                        <-- Updated with PovoAgent entries
+└── conventions.md                    <-- Pattern conventions
+```
 
 After deploying `copilot + flutter` into a project, the target looks like:
 

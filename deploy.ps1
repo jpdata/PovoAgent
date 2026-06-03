@@ -148,6 +148,10 @@ $PlatformConfig = @{
         AgentsDir = ".claude\agents"
         SkillsDir = ".claude\skills"
     }
+    opencode = @{
+        AgentsDir = ".opencode\agents"
+        SkillsDir = ".opencode\skills"
+    }
 }
 
 $Config = $PlatformConfig[$Platform]
@@ -174,7 +178,8 @@ $totalFiles += Copy-TreeSafe -Source $platformSource -Destination $Target -Label
 
 # 2. Agent template
 Write-Host "[2/6] Agent template..." -ForegroundColor Cyan
-$agentSource = Join-Path $TemplatesDir "povo.agent.md"
+$platformAgentSource = Join-Path $TemplatesDir "$Platform\povo.agent.md"
+$agentSource = if (Test-Path $platformAgentSource) { $platformAgentSource } else { Join-Path $TemplatesDir "povo.agent.md" }
 if (Test-Path $agentSource) {
     $agentDestDir = Join-Path $Target $Config.AgentsDir
     if (-not (Test-Path $agentDestDir)) {

@@ -2,13 +2,306 @@
 
 ## Decision Protocol
 
-When a technology choice, library, or architectural decision is not explicitly defined in the project, **ask the user before assuming**. The question should be asked at the appropriate lifecycle phase:
+When a technology choice or architectural decision is not explicitly defined in the project, **ask the user before assuming**. Ask at the appropriate phase:
 
-- **Analysis phase:** app type (dashboard, public site, back-office, PWA, marketing site), SEO or SSR needs, target browsers, accessibility level, and backend integration boundaries.
-- **Design phase:** React framework vs start-from-scratch approach, routing mode, data-loading strategy, UI system, authentication approach, forms complexity, and i18n needs.
-- **Implementation phase:** server-state library choice, shared client-state complexity, validation library choice, testing depth, browser/e2e coverage, and performance-sensitive interactions.
+- **Analysis phase:** App type (SPA / SSR / SSG), SEO requirements, authentication method, back-end API shape (REST / GraphQL), target browsers, accessibility level.
+- **Design phase:** Framework (Vite SPA vs Next.js), routing mode, authentication flow, form complexity, i18n needs, SSR requirements.
+- **Implementation phase:** Error boundary strategy, custom theming tokens, additional Zustand slices, optimistic updates strategy.
 
 **Default choices** (used when the user does not specify):
+
+| Concern            | Default                                   |
+|--------------------|-------------------------------------------|
+| Build              | Vite + React + TypeScript (strict)        |
+| Styling            | Tailwind CSS v4                           |
+| Components         | shadcn/ui (headless + Tailwind)           |
+| Server state       | TanStack Query v5                         |
+| Client state       | Zustand                                   |
+| Routing            | React Router v7                           |
+| HTTP client        | Axios                                     |
+| Schema validation  | Zod (Application layer only)              |
+| Forms              | React Hook Form + Zod resolver            |
+| Testing            | Vitest + React Testing Library + MSW      |
+| Linting            | ESLint (flat config) + Prettier           |
+
+## Project Structure (Clean Architecture for React)
+
+The project uses four global layers. The `presentation/` layer is **globally swappable** — it can be replaced entirely without modifying any other layer.
+
+```text
+src/
+├── presentation/                      ← SWAPPABLE — pure UI, Tailwind, shadcn/ui
+│   ├── components/
+│   │   ├── ui/                        ← Design system primitives (shadcn/ui + Tailwind)
+│   │   └── {feature}/                 ← Feature-scoped presentational components
+│   ├── layouts/                       ← Layout shells (sidebar, header, page frame)
+│   └── pages/                         ← Route entry points: compose layout + components + view-model
+├── application/                       ← Business logic as custom hooks
+│   ├── use-cases/                     ← useXxxUseCase hooks: orchestrate domain + infra calls
+│   ├── store/                         ← Zustand slices for client-owned state
+│   ├── interfaces/                    ← TypeScript repository and service contracts
+│   └── types/                         ← Application DTOs and request/response shapes
+├── domain/                            ← Pure TypeScript, zero framework dependencies
+│   ├── entities/                      ← Domain entity interfaces and types
+│   └── validators/                    ← Pure validation functions, no side effects
+├── infrastructure/                    ← Implements Application contracts
+│   ├── http/                          ← Axios instance, interceptors, auth token injection
+│   ├── repositories/                  ← Concrete IXxxRepository implementations
+│   └── adapters/                      ← Pure functions: ApiXxxDto → XxxEntity
+└── main.tsx                           ← Bootstrap: providers, router, DI wiring
+```
+
+## Decoupling Rules
+
+```
+Presentation  ──►  Application  ──►  Domain
+Infrastructure ──►  Application  ──►  Domain
+Presentation  ✗──►  Infrastructure   (FORBIDDEN)
+Infrastructure ✗──►  Presentation    (FORBIDDEN)
+Application   ✗──►  Presentation    (FORBIDDEN)
+```
+
+**Detailed rules:**
+
+- `domain/` contains pure TypeScript only. No React, no Axios, no Zustand, no library imports.
+- `domain/validators/` returns `{ valid: boolean; errors: string[] }`. No Zod schemas in this layer.
+- `application/use-cases/` hooks orchestrate domain rules and call `application/interfaces/` contracts. They never import from `presentation/`.
+- `application/interfaces/` defines TypeScript contracts (`IUserRepository`). It never provides implementations.
+- `infrastructure/repositories/` implements `application/interfaces/` contracts. No UI imports.
+- `infrastructure/adapters/` are pure functions with no side effects.
+- `presentation/components/` receive all data and actions via **props only**. No direct imports from `infrastructure/` or `application/use-cases/`.
+- `presentation/pages/` wire the use-case hook output to the component tree. This is the **only** place where hooks and components are connected.
+
+**Swappability test:** A different design system can replace `src/presentation/` without any changes in `application/`, `domain/`, or `infrastructure/`.
+
+## SOLID in React
+
+- **S:** Each component renders one concern. Each hook manages one use case. Each repository targets one aggregate. Validators validate one entity.
+- **O:** New features add new hooks, components, repositories, and entities. Existing ones are not modified for unrelated requirements.
+- **L:** Hooks and repositories implementing the same interface are interchangeable. A mock repository replacing a real one must satisfy all consumers.
+- **I:** Props interfaces contain only what the component uses. Repository interfaces split by read and write concerns when consumers differ.
+- **D:** Pages depend on use-case hook outputs (abstractions). They never import concrete repositories or HTTP clients.
+
+## Design Patterns in React
+
+- **Repository pattern:** `application/interfaces/IXxxRepository.ts` defines the contract. `infrastructure/repositories/xxx-repository.ts` implements it.
+- **Use Case / View Model Hook:** `application/use-cases/use-xxx-use-case.ts` — a custom hook that encapsulates one business operation and returns the view-model the page needs.
+- **Adapter pattern:** `infrastructure/adapters/xxx-adapter.ts` — pure function mapping API DTO → domain entity.
+- **Strategy via props:** Pass the use-case hook result into the component tree via props to allow the same components to work with different data sources.
+- **Composition over inheritance:** Build complex UI by composing small, focused presentational components. No class inheritance in React components.
+
+## Presentation Layer Conventions
+
+### Components
+
+- Presentational components are pure functions. They render props and call callback props. No business logic.
+- `presentation/components/ui/` — shadcn/ui primitives installed with `npx shadcn@latest add <component>`. These are owned source files, not black-box npm imports.
+- `presentation/components/{feature}/` — Feature-scoped presentational components. Named by feature (`UserCard`, `OrderSummary`).
+- Components with visual variants use `cva()` (class-variance-authority). No scattered conditional class strings.
+- All conditional class merging uses `cn()` (clsx + tailwind-merge).
+
+### Tailwind CSS
+
+- All layout, spacing, typography, and color uses Tailwind utility classes.
+- No `style=` attributes that duplicate Tailwind utilities.
+- No hardcoded color hex/rgb values — use Tailwind theme tokens (`text-primary`, `bg-background`).
+- Responsive design uses Tailwind breakpoint prefixes: `sm:`, `md:`, `lg:`, `xl:`.
+- Dark mode via `dark:` prefix and a `ThemeProvider` wrapping the app.
+- Custom tokens defined in `tailwind.config.ts` under `theme.extend`.
+
+### Layouts
+
+- `presentation/layouts/` contains layout shells only (header, sidebar, footer, main frame).
+- Layouts accept a `children` prop. They do not fetch data.
+- Pages choose which layout to render.
+
+### Pages
+
+- `presentation/pages/` contains one file per route (`UsersPage.tsx`, `UserDetailPage.tsx`).
+- A page's job: call the use-case hook(s), pass the result down as props to components.
+- A page may handle navigation (`useNavigate`) and URL parameters (`useParams`), since routing is a presentation concern.
+
+## Application Layer Conventions
+
+### Use-Case Hooks
+
+```ts
+// application/use-cases/use-get-users.ts
+export function useGetUsers() {
+  const repo = useUserRepository(); // injected via context
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: () => repo.getAll(),
+  });
+}
+```
+
+- One hook = one use case.
+- Named `useXxxUseCase` or `useGetXxx` / `useCreateXxx` for clarity.
+- Mutations use TanStack Query `useMutation` with `onSuccess` cache invalidation.
+- The hook returns data, loading state, and action functions — the page's complete view-model.
+
+### Zustand Store
+
+- One slice per domain concern (`useUserStore`, `useCartStore`).
+- Slice file: `application/store/user-store.ts`.
+- Client state only: UI-owned state (filters, selection, pagination cursor). Never cache server data here.
+- Exported as a hook: `export const useUserStore = create<UserStore>(...)`.
+
+### Interfaces
+
+```ts
+// application/interfaces/i-user-repository.ts
+export interface IUserRepository {
+  getAll(): Promise<UserEntity[]>;
+  getById(id: string): Promise<UserEntity>;
+  create(data: CreateUserDto): Promise<UserEntity>;
+}
+```
+
+- Named `IXxxRepository` or `IXxxService`.
+- Only defines the contract. No implementation details.
+
+## Domain Layer Conventions
+
+### Entities
+
+```ts
+// domain/entities/user-entity.ts
+export interface UserEntity {
+  id: string;
+  name: string;
+  email: string;
+  createdAt: Date;
+}
+```
+
+- Pure TypeScript interfaces or types. No classes required.
+- No library imports (`zod`, `axios`, `react`).
+
+### Validators
+
+```ts
+// domain/validators/user-validator.ts
+export function validateCreateUser(
+  input: unknown
+): { valid: boolean; errors: string[] } { ... }
+```
+
+- Pure functions, no side effects.
+- Zod schemas that power validators live in `application/types/` and call these validator functions.
+
+## Infrastructure Layer Conventions
+
+### HTTP Client
+
+```ts
+// infrastructure/http/axios-instance.ts
+export const httpClient = axios.create({ baseURL: import.meta.env.VITE_API_URL });
+httpClient.interceptors.request.use(authInterceptor);
+```
+
+- Single Axios instance. Auth token injected via request interceptor.
+- Response errors normalized via response interceptor.
+
+### Repositories
+
+```ts
+// infrastructure/repositories/user-repository.ts
+export class UserRepository implements IUserRepository {
+  async getAll(): Promise<UserEntity[]> {
+    const { data } = await httpClient.get<ApiUserDto[]>('/users');
+    return data.map(adaptUser);
+  }
+}
+```
+
+- One class per repository. Implements the interface from `application/interfaces/`.
+- Uses the Axios instance from `infrastructure/http/`.
+- Calls the adapter to transform API DTOs.
+
+### Adapters
+
+```ts
+// infrastructure/adapters/user-adapter.ts
+export function adaptUser(dto: ApiUserDto): UserEntity {
+  return { id: dto.id, name: dto.name, email: dto.email, createdAt: new Date(dto.created_at) };
+}
+```
+
+- Pure functions. Input: API DTO. Output: domain entity.
+
+## Dependency Injection Pattern
+
+Repositories are injected via React Context, not imported directly.
+
+```ts
+// main.tsx (or a dedicated provider file)
+const userRepo = new UserRepository();
+<UserRepositoryContext.Provider value={userRepo}>
+  <App />
+</UserRepositoryContext.Provider>
+```
+
+```ts
+// application/use-cases/use-get-users.ts
+const repo = useContext(UserRepositoryContext);
+```
+
+- Context providers are created near the repository class.
+- In testing, substitute the real repository with a mock that implements the same interface.
+
+## Naming Conventions
+
+| Artifact           | Convention              | Example                         |
+|--------------------|-------------------------|---------------------------------|
+| Component          | `PascalCase.tsx`        | `UserCard.tsx`                  |
+| Page               | `PascalCase.tsx`        | `UsersPage.tsx`                 |
+| Hook               | `use-xxx.ts`            | `use-get-users.ts`              |
+| Hook export        | `useXxx`                | `useGetUsers`                   |
+| Repository file    | `xxx-repository.ts`     | `user-repository.ts`            |
+| Adapter file       | `xxx-adapter.ts`        | `user-adapter.ts`               |
+| Interface          | `i-xxx-repository.ts`   | `i-user-repository.ts`          |
+| Domain entity      | `xxx-entity.ts`         | `user-entity.ts`                |
+| DTO                | `xxx-dto.ts`            | `create-user-dto.ts`            |
+| Store              | `xxx-store.ts`          | `user-store.ts`                 |
+| Test file          | same base + `.test.*`   | `user-validator.test.ts`        |
+| Folders            | `kebab-case`            | `use-cases/`, `user-detail/`    |
+| Type / Interface   | `PascalCase`            | `UserEntity`, `IUserRepository` |
+| Variables / props  | `camelCase`             | `userId`, `onSubmit`            |
+
+## Testing
+
+- Co-locate test files with the code they validate.
+- `domain/validators/` — pure TypeScript tests, no React rendering.
+- `application/use-cases/` — hook tests with `renderHook` + MSW for API mocking.
+- `infrastructure/repositories/` — test with MSW; verify adapter transforms.
+- `presentation/components/` — React Testing Library, user-facing assertions.
+- `presentation/pages/` — integration tests with mock repository context.
+
+## Common Packages
+
+| Package                        | Purpose                             |
+|--------------------------------|-------------------------------------|
+| `vite`                         | Build tool                          |
+| `react`, `react-dom`           | UI framework                        |
+| `typescript`                   | Type safety (strict mode)           |
+| `tailwindcss` v4               | Utility-first styling               |
+| `@shadcn/ui` (via CLI)         | Component primitives                |
+| `class-variance-authority`     | Component variant management        |
+| `clsx` + `tailwind-merge`      | Class name composition (`cn()`)     |
+| `react-router-dom` v7          | Routing                             |
+| `@tanstack/react-query` v5     | Server state management             |
+| `zustand`                      | Client state management             |
+| `axios`                        | HTTP client                         |
+| `zod`                          | Schema validation (Application layer)|
+| `react-hook-form`              | Form state management               |
+| `@hookform/resolvers`          | Zod integration for forms           |
+| `vitest`                       | Unit test runner                    |
+| `@testing-library/react`       | Component testing                   |
+| `msw`                          | API mocking in tests                |
+| `eslint` (flat config)         | Linting                             |
+| `prettier`                     | Code formatting                     |
 
 - React: latest stable React with TypeScript.
 - Bootstrapping: if the project needs full-stack React features such as SSR, SSG, streaming, route loaders/actions, or server components, choose a React framework during analysis and design. For start-from-scratch client apps without those requirements, use Vite.

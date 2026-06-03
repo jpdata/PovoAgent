@@ -1,87 +1,266 @@
 ---
 name: react-scaffold
-description: 'Scaffold a new React project with a modern feature-first architecture. Use when creating a new React app, setting up feature boundaries, routing, providers, testing foundations, and a neutral technical base while leaving project-specific UI baseline decisions to analysis and design.'
-argument-hint: 'Project name, application type, and main features'
+description: 'Scaffold a new React + TypeScript + Tailwind project with Clean Architecture four-layer structure. Use when creating a new React app: Vite setup, Tailwind v4, shadcn/ui, TanStack Query, Zustand, React Router v7, Axios, and the Presentation / Application / Domain / Infrastructure folder tree.'
+argument-hint: 'Project name and main feature list'
 ---
 
 # React Project Scaffolding
 
 ## When to Use
+
 - Creating a new React application from scratch.
-- Setting up a feature-first project structure with explicit domain, data, and UI boundaries.
-- Configuring routing, providers, data-loading, and testing foundations while leaving project-specific UI baseline decisions to analysis and design.
+- Setting up the four-layer Clean Architecture folder structure.
+- Bootstrapping Tailwind CSS v4, shadcn/ui, TanStack Query, Zustand, and React Router v7.
+
+## Pre-Scaffold Questions
+
+Ask the user **before starting** if any of these are undefined:
+
+- App type: SPA (Vite) or SSR (Next.js)?
+- Back-end API: REST or GraphQL? Base URL known?
+- Authentication: JWT / OAuth / session?
+- i18n required?
 
 ## Procedure
 
-1. **Define key decisions before scaffolding**
-   - Ask the user if these are unclear: React framework vs start-from-scratch React, rendering needs (CSR / SSR / SSG), routing mode, server-state strategy, UI system, authentication, forms complexity, and i18n requirements.
-   - Do not impose a fixed visual baseline from the React pattern. The real project's analysis and design phases must decide the design system, visual direction, and shared UI primitives.
+### Step 1 — Create the Vite project
 
-2. **Choose the scaffold path**
-   - If the project needs full-stack React capabilities, ask the user to choose the framework path and scaffold with that framework.
-   - For a start-from-scratch client React app, use Vite:
-     ```bash
-     npm create vite@latest <project_name> -- --template react-ts
-     ```
-   - If the project explicitly chooses React Router framework mode:
-     ```bash
-     npx create-react-router@latest
-     ```
+```bash
+npm create vite@latest <project-name> -- --template react-ts
+cd <project-name>
+```
 
-3. **Set up the feature-first folder structure**
-   ```text
-   src/
-   ├── app/
-   │   ├── providers/
-   │   ├── router/
-   │   └── layout/
-   ├── shared/
-   │   ├── ui/
-   │   ├── hooks/
-   │   ├── lib/
-   │   └── types/
-   ├── features/
-   ├── styles/
-   └── main.tsx
-   ```
+If the project needs SSR, use Next.js instead and adapt the folder structure accordingly.
 
-4. **Add core dependencies**
-   - Routing: `react-router-dom` if the project is a routed, non-framework React app.
-   - Server state: `@tanstack/react-query` when the project needs caching, invalidation, pagination, or background refresh.
-   - Testing: `vitest` and `@testing-library/react`.
-   - Browser/e2e testing: `playwright` only if the project needs browser automation.
-   - Forms: `react-hook-form` and a schema library only if the project chooses them in design.
-   - UI system: add only the packages required by the chosen design-system strategy.
+### Step 2 — Install core dependencies
 
-5. **Create base application files**
-   - `src/main.tsx` — application bootstrap
-   - `src/app/providers/AppProviders.tsx` — root providers
-   - `src/app/router/router.tsx` or framework routing entry — route composition
-   - `src/app/layout/AppShell.tsx` — app shell and top-level layout
-   - `src/shared/lib/env.ts` — environment and configuration helpers
-   - `src/styles/` — global tokens, theme setup, and app-level styles
+```bash
+# Routing
+npm install react-router-dom
 
-6. **Set up the chosen UI foundations**
-   - Keep global layout, typography, and visual-system decisions in the styling layer, not inside feature components.
-   - If the project uses a component library, configure it through its supported setup and theming APIs.
-   - If the project uses a custom design system, scaffold only the neutral structure and leave project-specific UI primitives to the design output.
+# Server state
+npm install @tanstack/react-query
 
-7. **Set up testing foundations**
-   - Add a Vitest test command and setup file.
-   - Add React Testing Library setup and shared test utilities.
-   - Keep tests co-located with the code they validate.
+# Client state
+npm install zustand
 
-8. **Verify**
-   - Run `npm install`.
-   - Run `npm run build` — no errors.
-   - Run `npx vitest run` — no failing unit tests.
-   - Confirm no React imports appear inside future `domain/` folders.
+# HTTP client
+npm install axios
+
+# Forms + validation
+npm install react-hook-form @hookform/resolvers zod
+
+# Tailwind v4 (new Vite plugin approach)
+npm install -D tailwindcss @tailwindcss/vite
+
+# Class utilities for shadcn/ui components
+npm install clsx tailwind-merge class-variance-authority lucide-react
+```
+
+### Step 3 — Configure Tailwind CSS v4
+
+Add the Tailwind plugin to `vite.config.ts`:
+
+```ts
+// vite.config.ts
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+import tailwindcss from '@tailwindcss/vite';
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+  resolve: { alias: { '@': '/src' } },
+});
+```
+
+Create `src/styles/globals.css`:
+
+```css
+@import "tailwindcss";
+```
+
+Import in `src/main.tsx`:
+
+```ts
+import './styles/globals.css';
+```
+
+### Step 4 — Set up shadcn/ui
+
+```bash
+npx shadcn@latest init
+```
+
+When prompted:
+- Style: Default
+- Base color: Neutral (or per project design)
+- CSS variables: Yes
+
+This creates `src/presentation/components/ui/` with source components and updates `tailwind.config.ts`.
+
+Add initial components as needed:
+
+```bash
+npx shadcn@latest add button input card dialog label
+```
+
+### Step 5 — Create the four-layer folder structure
+
+```bash
+mkdir -p src/presentation/components/ui
+mkdir -p src/presentation/layouts
+mkdir -p src/presentation/pages
+mkdir -p src/application/use-cases
+mkdir -p src/application/store
+mkdir -p src/application/interfaces
+mkdir -p src/application/types
+mkdir -p src/domain/entities
+mkdir -p src/domain/validators
+mkdir -p src/infrastructure/http
+mkdir -p src/infrastructure/repositories
+mkdir -p src/infrastructure/adapters
+```
+
+### Step 6 — Create the HTTP client
+
+```ts
+// src/infrastructure/http/axios-instance.ts
+import axios from 'axios';
+
+export const httpClient = axios.create({
+  baseURL: import.meta.env.VITE_API_URL,
+  headers: { 'Content-Type': 'application/json' },
+});
+
+httpClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('auth_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+httpClient.interceptors.response.use(
+  (res) => res,
+  (err) => Promise.reject(err)
+);
+```
+
+### Step 7 — Create the `cn` utility
+
+```ts
+// src/presentation/components/ui/cn.ts
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+### Step 8 — Bootstrap `main.tsx`
+
+```tsx
+// src/main.tsx
+import './styles/globals.css';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter } from 'react-router-dom';
+import { App } from './app';
+import { UserRepository } from './infrastructure/repositories/user-repository';
+import { UserRepositoryContext } from './application/interfaces/i-user-repository';
+
+const queryClient = new QueryClient();
+const userRepo = new UserRepository();
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <UserRepositoryContext.Provider value={userRepo}>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </UserRepositoryContext.Provider>
+    </QueryClientProvider>
+  </StrictMode>
+);
+```
+
+### Step 9 — Create the app layout shell
+
+```tsx
+// src/presentation/layouts/AppShell.tsx
+import { Outlet } from 'react-router-dom';
+
+export function AppShell() {
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <header className="border-b px-6 py-4">
+        <h1 className="text-lg font-semibold">App</h1>
+      </header>
+      <main className="p-6">
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+```
+
+### Step 10 — Set up router
+
+```tsx
+// src/app.tsx
+import { Routes, Route } from 'react-router-dom';
+import { AppShell } from './presentation/layouts/AppShell';
+
+export function App() {
+  return (
+    <Routes>
+      <Route element={<AppShell />}>
+        {/* Feature routes are added here */}
+      </Route>
+    </Routes>
+  );
+}
+```
+
+### Step 11 — Install and configure testing
+
+```bash
+npm install -D vitest @testing-library/react @testing-library/user-event @testing-library/jest-dom msw jsdom
+```
+
+Add to `vite.config.ts`:
+
+```ts
+test: {
+  globals: true,
+  environment: 'jsdom',
+  setupFiles: ['./src/test-setup.ts'],
+},
+```
+
+Create `src/test-setup.ts`:
+
+```ts
+import '@testing-library/jest-dom';
+```
+
+### Step 12 — Verify
+
+```bash
+npm install
+npm run build       # Must pass with zero errors
+npx vitest run      # Must pass with zero failures
+```
 
 ## Decoupling Validation
-- `domain/` folders must contain pure TypeScript only.
-- `data/` adapts external systems behind feature contracts.
-- `ui/` components depend on hooks, use cases, props, or state ownership boundaries rather than direct transport code.
-- Provider composition and routing stay in `app/`, not inside feature presentation modules.
+
+After scaffold, verify:
+- `src/domain/` contains no React or library imports.
+- `src/infrastructure/` does not import from `src/presentation/`.
+- `src/presentation/` does not import from `src/infrastructure/`.
+- `src/main.tsx` is the only place where concrete repositories are instantiated.
 
 ## Reference
-- Refer to `conventions.md` in the project root for React conventions.
+
+Refer to `conventions.md` in the project root for React conventions.
