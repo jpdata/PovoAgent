@@ -29,6 +29,15 @@
 
 ## Documented Updates
 
+### 2026-06-05 - OpenCode MCP config schema migration
+
+- Updated `platforms/opencode/opencode.json` MCP server entries from legacy format to current OpenCode schema.
+- Replaced `command` string + `args` array with a single `command` array for local MCP servers.
+- Replaced `env` with `environment` for the GitHub MCP server.
+- Added `enabled: true` to each MCP server entry.
+- Why: prevent `ConfigInvalidError` startup failures (`Expected array, got "npx"`) in projects generated from this template.
+- Affected files: `platforms/opencode/opencode.json`, `Docs/framework-ai-enhancement-phase.md`.
+
 ### 2026-04-25 - Enhancement phase introduced
 
 - Added enhancement-phase rules to `.github/copilot-instructions.md`.

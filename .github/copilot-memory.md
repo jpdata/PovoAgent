@@ -13,6 +13,7 @@
 - Astro is a supported deployable pattern in this repository.
 - Deploy pattern discovery is driven by top-level pattern folders that contain `conventions.md`, but README and script help text should still be updated when adding a new supported pattern.
 - The Astro pattern is static-first and content-first, with React integration as an optional island strategy rather than a mandatory baseline.
+- OpenCode MCP local server config must use the current schema: `command` as array, `environment` (not `env`), and explicit `enabled` to avoid startup `ConfigInvalidError` in generated projects.
 
 ## User Corrections
 

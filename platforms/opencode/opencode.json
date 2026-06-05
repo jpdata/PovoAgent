@@ -7,27 +7,30 @@
     "mcp": {
         "fetch": {
             "type": "local",
-            "command": "npx",
-            "args": [
+            "enabled": true,
+            "command": [
+                "npx",
                 "-y",
                 "@modelcontextprotocol/server-fetch"
             ]
         },
         "github": {
             "type": "local",
-            "command": "npx",
-            "args": [
+            "enabled": true,
+            "command": [
+                "npx",
                 "-y",
                 "@modelcontextprotocol/server-github"
             ],
-            "env": {
+            "environment": {
                 "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
             }
         },
         "sequential-thinking": {
             "type": "local",
-            "command": "npx",
-            "args": [
+            "enabled": true,
+            "command": [
+                "npx",
                 "-y",
                 "@modelcontextprotocol/server-sequential-thinking"
             ]
