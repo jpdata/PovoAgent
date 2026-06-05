@@ -33,9 +33,10 @@ while getopts "p:t:d:fh" opt; do
         d) TARGET="$OPTARG" ;;
         f) FORCE=true ;;
         h)
-            echo "Usage: $0 [-p platform] [-t pattern] [-d target] [-f]"
+            echo "Usage: $0 [-p platform] [-t pattern[,pattern2,...]] [-d target] [-f]"
             echo "  -p  AI platform: copilot | gemini | claude"
-            echo "  -t  Technology pattern: flutter | dotnet | angular | react | astro"
+            echo "  -t  Technology pattern(s): flutter | dotnet | angular | react | astro"
+            echo "      Accepts comma-separated values: -t flutter,dotnet"
             echo "  -d  Target project path"
             echo "  -f  Force overwrite existing files"
             exit 0
@@ -84,6 +85,38 @@ select_option() {
     done
 }
 
+select_multiple() {
+    local prompt="$1"
+    shift
+    local options=("$@")
+    echo ""
+    echo -e "${CYAN}${prompt}${NC}"
+    for i in "${!options[@]}"; do
+        echo "  [$((i + 1))] ${options[$i]}"
+    done
+    echo -e "  ${GRAY}Enter one or more numbers separated by commas (e.g. 1,3)${NC}"
+    while true; do
+        read -rp "Select: " choice
+        local result=()
+        local valid=true
+        IFS=',' read -ra parts <<< "$choice"
+        for part in "${parts[@]}"; do
+            part="${part// /}"
+            if [[ "$part" =~ ^[0-9]+$ ]] && (( part >= 1 && part <= ${#options[@]} )); then
+                result+=("${options[$((part - 1))]}")
+            else
+                valid=false
+                break
+            fi
+        done
+        if [[ "$valid" == true ]] && [[ ${#result[@]} -gt 0 ]]; then
+            printf '%s\n' "${result[@]}"
+            return
+        fi
+        echo -e "  ${YELLOW}Invalid selection, try again.${NC}"
+    done
+}
+
 mapfile -t AVAILABLE_PLATFORMS < <(get_platforms)
 mapfile -t AVAILABLE_PATTERNS  < <(get_patterns)
 
@@ -91,7 +124,8 @@ if [[ -z "$PLATFORM" ]]; then
     PLATFORM=$(select_option "Select AI platform:" "${AVAILABLE_PLATFORMS[@]}")
 fi
 if [[ -z "$PATTERN" ]]; then
-    PATTERN=$(select_option "Select technology pattern:" "${AVAILABLE_PATTERNS[@]}")
+    mapfile -t selected_patterns < <(select_multiple "Select technology pattern(s):" "${AVAILABLE_PATTERNS[@]}")
+    PATTERN=$(IFS=','; echo "${selected_patterns[*]}")
 fi
 if [[ -z "$TARGET" ]]; then
     echo ""
@@ -101,15 +135,21 @@ fi
 # ── Validation ───────────────────────────────────────────────────────────────
 PLATFORM=$(echo "$PLATFORM" | tr '[:upper:]' '[:lower:]')
 PATTERN=$(echo "$PATTERN" | tr '[:upper:]' '[:lower:]')
+IFS=',' read -ra PATTERNS <<< "$PATTERN"
+for i in "${!PATTERNS[@]}"; do
+    PATTERNS[$i]="${PATTERNS[$i]// /}"
+done
 
 if [[ ! " ${AVAILABLE_PLATFORMS[*]} " =~ " ${PLATFORM} " ]]; then
     echo "Error: Unknown platform '$PLATFORM'. Available: ${AVAILABLE_PLATFORMS[*]}" >&2
     exit 1
 fi
-if [[ ! " ${AVAILABLE_PATTERNS[*]} " =~ " ${PATTERN} " ]]; then
-    echo "Error: Unknown pattern '$PATTERN'. Available: ${AVAILABLE_PATTERNS[*]}" >&2
-    exit 1
-fi
+for pat in "${PATTERNS[@]}"; do
+    if [[ ! " ${AVAILABLE_PATTERNS[*]} " =~ " ${pat} " ]]; then
+        echo "Error: Unknown pattern '$pat'. Available: ${AVAILABLE_PATTERNS[*]}" >&2
+        exit 1
+    fi
+done
 if [[ ! -d "$TARGET" ]]; then
     echo "Error: Target path does not exist: $TARGET" >&2
     exit 1
@@ -175,7 +215,7 @@ echo ""
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  PovoAgent Deploy${NC}"
 echo -e "${WHITE}  Platform : ${PLATFORM}${NC}"
-echo -e "${WHITE}  Pattern  : ${PATTERN}${NC}"
+echo -e "${WHITE}  Patterns : $(IFS=', '; echo "${PATTERNS[*]}")${NC}"
 echo -e "${WHITE}  Target   : ${TARGET}${NC}"
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
 echo ""
@@ -210,25 +250,37 @@ echo -e "${CYAN}[3/6] Lifecycle skills...${NC}"
 copy_tree_safe "$SKILLS_DIR" "$TARGET/$SKILLS_TARGET_DIR" "Lifecycle skills"
 
 # 4. Pattern conventions
-echo -e "${CYAN}[4/6] Pattern conventions (${PATTERN})...${NC}"
-PATTERN_DIR="$SCRIPT_DIR/$PATTERN"
-CONVENTIONS_SOURCE="$PATTERN_DIR/conventions.md"
-if [[ -f "$CONVENTIONS_SOURCE" ]]; then
-    CONVENTIONS_DEST="$TARGET/conventions.md"
-    if [[ -f "$CONVENTIONS_DEST" ]] && [[ "$FORCE" != true ]]; then
-        echo -e "  ${YELLOW}[EXISTS] conventions.md — use -f to overwrite${NC}"
+MULTI_PATTERN=false
+[[ ${#PATTERNS[@]} -gt 1 ]] && MULTI_PATTERN=true
+echo -e "${CYAN}[4/6] Pattern conventions ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
+for pat in "${PATTERNS[@]}"; do
+    PATTERN_DIR="$SCRIPT_DIR/$pat"
+    CONVENTIONS_SOURCE="$PATTERN_DIR/conventions.md"
+    if [[ "$MULTI_PATTERN" == true ]]; then
+        CONVENTIONS_NAME="conventions-${pat}.md"
     else
-        cp "$CONVENTIONS_SOURCE" "$CONVENTIONS_DEST"
-        TOTAL_FILES=$((TOTAL_FILES + 1))
+        CONVENTIONS_NAME="conventions.md"
     fi
-else
-    echo -e "  ${GRAY}[SKIP] conventions.md not found${NC}"
-fi
+    if [[ -f "$CONVENTIONS_SOURCE" ]]; then
+        CONVENTIONS_DEST="$TARGET/$CONVENTIONS_NAME"
+        if [[ -f "$CONVENTIONS_DEST" ]] && [[ "$FORCE" != true ]]; then
+            echo -e "  ${YELLOW}[EXISTS] ${CONVENTIONS_NAME} — use -f to overwrite${NC}"
+        else
+            cp "$CONVENTIONS_SOURCE" "$CONVENTIONS_DEST"
+            TOTAL_FILES=$((TOTAL_FILES + 1))
+        fi
+    else
+        echo -e "  ${GRAY}[SKIP] ${CONVENTIONS_NAME} not found${NC}"
+    fi
+done
 
 # 5. Pattern agents & skills
-echo -e "${CYAN}[5/6] Pattern agents & skills (${PATTERN})...${NC}"
-copy_tree_safe "$PATTERN_DIR/agents" "$TARGET/$AGENTS_DIR" "Pattern agents"
-copy_tree_safe "$PATTERN_DIR/skills" "$TARGET/$SKILLS_TARGET_DIR" "Pattern skills"
+echo -e "${CYAN}[5/6] Pattern agents & skills ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
+for pat in "${PATTERNS[@]}"; do
+    PATTERN_DIR="$SCRIPT_DIR/$pat"
+    copy_tree_safe "$PATTERN_DIR/agents" "$TARGET/$AGENTS_DIR" "Pattern agents ($pat)"
+    copy_tree_safe "$PATTERN_DIR/skills" "$TARGET/$SKILLS_TARGET_DIR" "Pattern skills ($pat)"
+done
 
 # 6. Update .gitignore
 echo -e "${CYAN}[6/6] Updating .gitignore...${NC}"
@@ -261,25 +313,32 @@ if [[ -d "$SKILLS_DIR" ]]; then
 fi
 
 # Conventions
-IGNORE_ENTRIES+=("/conventions.md")
+for pat in "${PATTERNS[@]}"; do
+    if [[ "$MULTI_PATTERN" == true ]]; then
+        IGNORE_ENTRIES+=("/conventions-${pat}.md")
+    else
+        IGNORE_ENTRIES+=("/conventions.md")
+    fi
+done
 
-# Pattern agents
-PATTERN_AGENTS_DIR="$PATTERN_DIR/agents"
-if [[ -d "$PATTERN_AGENTS_DIR" ]]; then
-    while IFS= read -r -d '' file; do
-        rel="${file#"$PATTERN_AGENTS_DIR"/}"
-        IGNORE_ENTRIES+=("/$AGENTS_DIR/$rel")
-    done < <(find "$PATTERN_AGENTS_DIR" -type f -print0)
-fi
-
-# Pattern skills (as directories)
-PATTERN_SKILLS_DIR="$PATTERN_DIR/skills"
-if [[ -d "$PATTERN_SKILLS_DIR" ]]; then
-    while IFS= read -r -d '' dir; do
-        dirname="$(basename "$dir")"
-        IGNORE_ENTRIES+=("/$SKILLS_TARGET_DIR/$dirname/")
-    done < <(find "$PATTERN_SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
-fi
+# Pattern agents and skills
+for pat in "${PATTERNS[@]}"; do
+    PATTERN_DIR="$SCRIPT_DIR/$pat"
+    PATTERN_AGENTS_DIR="$PATTERN_DIR/agents"
+    if [[ -d "$PATTERN_AGENTS_DIR" ]]; then
+        while IFS= read -r -d '' file; do
+            rel="${file#"$PATTERN_AGENTS_DIR"/}"
+            IGNORE_ENTRIES+=("/$AGENTS_DIR/$rel")
+        done < <(find "$PATTERN_AGENTS_DIR" -type f -print0)
+    fi
+    PATTERN_SKILLS_DIR="$PATTERN_DIR/skills"
+    if [[ -d "$PATTERN_SKILLS_DIR" ]]; then
+        while IFS= read -r -d '' dir; do
+            dirname="$(basename "$dir")"
+            IGNORE_ENTRIES+=("/$SKILLS_TARGET_DIR/$dirname/")
+        done < <(find "$PATTERN_SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
+    fi
+done
 
 # Sort and deduplicate
 mapfile -t IGNORE_ENTRIES < <(printf '%s\n' "${IGNORE_ENTRIES[@]}" | sort -u)

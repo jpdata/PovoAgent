@@ -11,7 +11,8 @@
     AI platform to deploy: copilot | gemini | claude.
 
 .PARAMETER Pattern
-    Technology pattern to deploy: flutter | dotnet | angular | react | astro.
+    Technology pattern(s) to deploy: flutter | dotnet | angular | react | astro.
+    Accepts a single value or multiple comma-separated values (e.g. "flutter,dotnet").
 
 .PARAMETER Target
     Absolute path to the target project folder.
@@ -21,15 +22,18 @@
 
 .EXAMPLE
     .\deploy.ps1 -Platform copilot -Pattern flutter -Target C:\Projects\MyApp
+    .\deploy.ps1 -p copilot -t flutter -d C:\Projects\MyApp
+    .\deploy.ps1 -Platform copilot -Pattern "flutter,dotnet" -Target C:\Projects\MyApp
+    .\deploy.ps1 -p copilot -t "flutter,dotnet" -d C:\Projects\MyApp
     .\deploy.ps1   # interactive mode
 #>
 
 [CmdletBinding()]
 param(
-    [string]$Platform,
-    [string]$Pattern,
-    [string]$Target,
-    [switch]$Force
+    [Alias("p")]  [string]$Platform,
+    [Alias("t")]  [string[]]$Pattern,
+    [Alias("d")]  [string]$Target,
+    [Alias("f")]  [switch]$Force
 )
 
 Set-StrictMode -Version Latest
@@ -74,14 +78,32 @@ function Select-Option {
     return $Options[$index - 1]
 }
 
+function Select-MultiOption {
+    param([string]$Prompt, [string[]]$Options)
+    Write-Host ""
+    Write-Host $Prompt -ForegroundColor Cyan
+    for ($i = 0; $i -lt $Options.Count; $i++) {
+        Write-Host "  [$($i + 1)] $($Options[$i])"
+    }
+    Write-Host "  Enter one or more numbers separated by commas (e.g. 1,3)" -ForegroundColor DarkGray
+    do {
+        $raw    = Read-Host "Select"
+        $parts  = $raw -split '[,\s]+' | Where-Object { $_ -match '^\d+$' }
+        $valid  = $parts.Count -gt 0 -and (-not ($parts | Where-Object { [int]$_ -lt 1 -or [int]$_ -gt $Options.Count }))
+        if (-not $valid) { Write-Host "  Invalid selection, try again." -ForegroundColor Yellow }
+    } while (-not $valid)
+    return $parts | ForEach-Object { $Options[[int]$_ - 1] }
+}
+
 $AvailablePlatforms = Get-AvailablePlatforms
 $AvailablePatterns  = Get-AvailablePatterns
 
 if (-not $Platform) {
     $Platform = Select-Option -Prompt "Select AI platform:" -Options $AvailablePlatforms
 }
-if (-not $Pattern) {
-    $Pattern = Select-Option -Prompt "Select technology pattern:" -Options $AvailablePatterns
+if (-not $Pattern -or $Pattern.Count -eq 0) {
+    $selectedPatterns = Select-MultiOption -Prompt "Select technology pattern(s):" -Options $AvailablePatterns
+    $Pattern = $selectedPatterns
 }
 if (-not $Target) {
     $Target = Read-Host "`nTarget project path"
@@ -89,13 +111,18 @@ if (-not $Target) {
 
 # ── Validation ───────────────────────────────────────────────────────────────
 $Platform = $Platform.ToLower()
-$Pattern  = $Pattern.ToLower()
+$Patterns = @($Pattern) |
+    ForEach-Object { $_ -split '[,;]+' } |
+    ForEach-Object { $_.Trim().ToLower() } |
+    Where-Object { $_ -ne '' }
 
 if ($Platform -notin $AvailablePlatforms) {
     Write-Error "Unknown platform '$Platform'. Available: $($AvailablePlatforms -join ', ')"
 }
-if ($Pattern -notin $AvailablePatterns) {
-    Write-Error "Unknown pattern '$Pattern'. Available: $($AvailablePatterns -join ', ')"
+foreach ($p in $Patterns) {
+    if ($p -notin $AvailablePatterns) {
+        Write-Error "Unknown pattern '$p'. Available: $($AvailablePatterns -join ', ')"
+    }
 }
 if (-not (Test-Path $Target)) {
     Write-Error "Target path does not exist: $Target"
@@ -237,7 +264,7 @@ Write-Host ""
 Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Green
 Write-Host "  PovoAgent Deploy" -ForegroundColor Green
 Write-Host "  Platform : $Platform" -ForegroundColor White
-Write-Host "  Pattern  : $Pattern" -ForegroundColor White
+Write-Host "  Patterns : $($Patterns -join ', ')" -ForegroundColor White
 Write-Host "  Target   : $Target" -ForegroundColor White
 Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Green
 Write-Host ""
@@ -273,33 +300,39 @@ $targetSkills = Join-Path $Target $Config.SkillsDir
 $totalFiles += Copy-TreeSafe -Source $SkillsDir -Destination $targetSkills -Label "Lifecycle skills"
 
 # 4. Pattern conventions
-Write-Host "[4/6] Pattern conventions ($Pattern)..." -ForegroundColor Cyan
-$patternDir = Join-Path $ScriptRoot $Pattern
-$conventionsSource = Join-Path $patternDir "conventions.md"
-if (Test-Path $conventionsSource) {
-    $conventionsDest = Join-Path $Target "conventions.md"
-    if ((Test-Path $conventionsDest) -and (-not $Force)) {
-        Write-Host "  [EXISTS] conventions.md - use -Force to overwrite" -ForegroundColor Yellow
+Write-Host "[4/6] Pattern conventions ($($Patterns -join ', '))..." -ForegroundColor Cyan
+$multiPattern = $Patterns.Count -gt 1
+foreach ($pat in $Patterns) {
+    $patternDir       = Join-Path $ScriptRoot $pat
+    $conventionsSource = Join-Path $patternDir "conventions.md"
+    $conventionsName  = if ($multiPattern) { "conventions-$pat.md" } else { "conventions.md" }
+    if (Test-Path $conventionsSource) {
+        $conventionsDest = Join-Path $Target $conventionsName
+        if ((Test-Path $conventionsDest) -and (-not $Force)) {
+            Write-Host "  [EXISTS] $conventionsName - use -Force to overwrite" -ForegroundColor Yellow
+        } else {
+            Copy-Item -Path $conventionsSource -Destination $conventionsDest -Force
+            $totalFiles++
+        }
     } else {
-        Copy-Item -Path $conventionsSource -Destination $conventionsDest -Force
-        $totalFiles++
+        Write-Host "  [SKIP] $conventionsName not found" -ForegroundColor DarkGray
     }
-} else {
-    Write-Host "  [SKIP] conventions.md not found" -ForegroundColor DarkGray
 }
 
 # 5. Pattern agents and skills
-Write-Host "[5/6] Pattern agents and skills ($Pattern)..." -ForegroundColor Cyan
-$patternAgents = Join-Path $patternDir "agents"
-$patternSkills = Join-Path $patternDir "skills"
-$targetAgents  = Join-Path $Target $Config.AgentsDir
-
-if ($Platform -eq "opencode") {
-    $totalFiles += Copy-AgentsForOpencode -Source $patternAgents -Destination $targetAgents
-} else {
-    $totalFiles += Copy-TreeSafe -Source $patternAgents -Destination $targetAgents -Label "Pattern agents"
+Write-Host "[5/6] Pattern agents and skills ($($Patterns -join ', '))..." -ForegroundColor Cyan
+$targetAgents = Join-Path $Target $Config.AgentsDir
+foreach ($pat in $Patterns) {
+    $patternDir    = Join-Path $ScriptRoot $pat
+    $patternAgents = Join-Path $patternDir "agents"
+    $patternSkills = Join-Path $patternDir "skills"
+    if ($Platform -eq "opencode") {
+        $totalFiles += Copy-AgentsForOpencode -Source $patternAgents -Destination $targetAgents
+    } else {
+        $totalFiles += Copy-TreeSafe -Source $patternAgents -Destination $targetAgents -Label "Pattern agents ($pat)"
+    }
+    $totalFiles += Copy-TreeSafe -Source $patternSkills -Destination $targetSkills -Label "Pattern skills ($pat)"
 }
-$totalFiles += Copy-TreeSafe -Source $patternSkills -Destination $targetSkills -Label "Pattern skills"
 
 # 6. Update .gitignore
 Write-Host "[6/6] Updating .gitignore..." -ForegroundColor Cyan
@@ -332,22 +365,26 @@ if (Test-Path $SkillsDir) {
 }
 
 # Conventions
-$ignoreEntries += "/conventions.md"
-
-# Pattern agents
-$patternAgentsDir = Join-Path $patternDir "agents"
-if (Test-Path $patternAgentsDir) {
-    Get-ChildItem -Path $patternAgentsDir -Recurse -File | ForEach-Object {
-        $rel = $_.FullName.Substring($patternAgentsDir.Length).TrimStart('\', '/') -replace '\\', '/'
-        $ignoreEntries += "/$($Config.AgentsDir -replace '\\', '/')/$rel"
-    }
+foreach ($pat in $Patterns) {
+    $conventionsName = if ($Patterns.Count -gt 1) { "conventions-$pat.md" } else { "conventions.md" }
+    $ignoreEntries += "/$conventionsName"
 }
 
-# Pattern skills (as directories)
-$patternSkillsDir = Join-Path $patternDir "skills"
-if (Test-Path $patternSkillsDir) {
-    Get-ChildItem -Path $patternSkillsDir -Directory | ForEach-Object {
-        $ignoreEntries += "/$($Config.SkillsDir -replace '\\', '/')/$($_.Name)/"
+# Pattern agents and skills
+foreach ($pat in $Patterns) {
+    $patternDir       = Join-Path $ScriptRoot $pat
+    $patternAgentsDir = Join-Path $patternDir "agents"
+    if (Test-Path $patternAgentsDir) {
+        Get-ChildItem -Path $patternAgentsDir -Recurse -File | ForEach-Object {
+            $rel = $_.FullName.Substring($patternAgentsDir.Length).TrimStart('\', '/') -replace '\\', '/'
+            $ignoreEntries += "/$($Config.AgentsDir -replace '\\', '/')/$rel"
+        }
+    }
+    $patternSkillsDir = Join-Path $patternDir "skills"
+    if (Test-Path $patternSkillsDir) {
+        Get-ChildItem -Path $patternSkillsDir -Directory | ForEach-Object {
+            $ignoreEntries += "/$($Config.SkillsDir -replace '\\', '/')/$($_.Name)/"
+        }
     }
 }
 

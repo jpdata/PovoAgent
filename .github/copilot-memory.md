@@ -20,6 +20,13 @@
 - 2026-04-25: The Angular pattern should stay at the level of general development guidance; do not prescribe a fixed UI baseline there. Specific design-system and visual-baseline decisions belong to the analysis and design phases of each real project.
 - 2026-04-25: The React pattern should follow the same principle as Angular: keep it at the level of general development guidance and leave framework-specific UI baseline and design-system decisions to the analysis and design phases of each real project.
 
+## Multi-Pattern Deploy (2026-06-05)
+
+- `deploy.ps1` and `deploy.sh` now support multiple patterns in one run via comma-separated input.
+- Single pattern → `conventions.md`; multiple patterns → `conventions-{pattern}.md` per pattern.
+- `.gitignore` block updated to cover all deployed patterns.
+- See `Docs/multi-pattern-deploy.md` for full details.
+
 ## Carry-Over
 
 - None.
