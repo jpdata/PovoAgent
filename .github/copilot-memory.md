@@ -14,6 +14,9 @@
 - Deploy pattern discovery is driven by top-level pattern folders that contain `conventions.md`, but README and script help text should still be updated when adding a new supported pattern.
 - The Astro pattern is static-first and content-first, with React integration as an optional island strategy rather than a mandatory baseline.
 - OpenCode MCP local server config must use the current schema: `command` as array, `environment` (not `env`), and explicit `enabled` to avoid startup `ConfigInvalidError` in generated projects.
+- `deploy.ps1` must wrap parsed pattern results in `@(...)`; otherwise a single pattern can become scalar and fail on `$Patterns.Count` under strict mode.
+- `deploy.ps1` now fails fast when parsed patterns are empty (e.g., `-t ","`) to avoid silent no-pattern deploy behavior.
+- `deploy.sh` now mirrors the same empty-pattern fail-fast validation after trimming/splitting parsed values.
 
 ## User Corrections
 

@@ -4,6 +4,13 @@
 
 Both `deploy.ps1` and `deploy.sh` now accept one or more technology patterns in a single deploy run instead of requiring a separate run for each pattern.
 
+### Bug Fix (2026-06-05)
+
+- Fixed `deploy.ps1` single-pattern parsing to always produce an array for `$Patterns`.
+- This prevents a strict-mode runtime failure at pattern-conventions step when checking `$Patterns.Count`.
+- Added an early validation guard in `deploy.ps1` that fails fast when parsed pattern input is empty (for example, `-t ","`).
+- Added the same early empty-pattern validation guard in `deploy.sh` so both scripts fail fast with a clear message.
+
 ## Why It Changed
 
 Projects that combine multiple technology stacks (e.g. a .NET backend with an Angular frontend) needed a way to deploy all relevant conventions, agents, and skills in one step.

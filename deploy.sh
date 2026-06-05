@@ -140,6 +140,17 @@ for i in "${!PATTERNS[@]}"; do
     PATTERNS[$i]="${PATTERNS[$i]// /}"
 done
 
+FILTERED_PATTERNS=()
+for pat in "${PATTERNS[@]}"; do
+    [[ -n "$pat" ]] && FILTERED_PATTERNS+=("$pat")
+done
+PATTERNS=("${FILTERED_PATTERNS[@]}")
+
+if [[ ${#PATTERNS[@]} -eq 0 ]]; then
+    echo "Error: No valid pattern was provided. Use -t with one or more values such as 'flutter' or 'flutter,dotnet'." >&2
+    exit 1
+fi
+
 if [[ ! " ${AVAILABLE_PLATFORMS[*]} " =~ " ${PLATFORM} " ]]; then
     echo "Error: Unknown platform '$PLATFORM'. Available: ${AVAILABLE_PLATFORMS[*]}" >&2
     exit 1

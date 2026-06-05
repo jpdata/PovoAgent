@@ -91,6 +91,7 @@ Each pattern contains:
 ```powershell
 # PowerShell (Windows)
 .\deploy.ps1 -Platform copilot -Pattern flutter -Target C:\Projects\MyApp
+.\deploy.ps1 -Platform copilot -Pattern "flutter,dotnet" -Target C:\Projects\Suite
 .\deploy.ps1                           # interactive mode
 .\deploy.ps1 -Platform copilot -Pattern angular -Target C:\Projects\Portal
 .\deploy.ps1 -Platform copilot -Pattern react -Target C:\Projects\Console
@@ -102,6 +103,7 @@ Each pattern contains:
 ```bash
 # Bash (Linux/macOS)
 ./deploy.sh -p copilot -t flutter -d /path/to/project
+./deploy.sh -p copilot -t flutter,dotnet -d /path/to/suite
 ./deploy.sh                            # interactive mode
 ./deploy.sh -p copilot -t angular -d /path/to/portal
 ./deploy.sh -p copilot -t react -d /path/to/console
@@ -109,6 +111,12 @@ Each pattern contains:
 ./deploy.sh -p gemini -t dotnet -d /path/to/project -f
 ./deploy.sh -p opencode -t react -d /path/to/project
 ```
+
+Pattern input validation:
+
+- Use one or more valid pattern names.
+- Empty parsed values are rejected in both scripts (for example, `-Pattern ","` or `-t ","`).
+- Single pattern deploy creates `conventions.md`; multi-pattern deploy creates `conventions-{pattern}.md` per pattern.
 
 The deploy process:
 

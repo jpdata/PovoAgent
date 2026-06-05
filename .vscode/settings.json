@@ -1,0 +1,12 @@
+{
+    "chat.tools.terminal.autoApprove": {
+        "/^bash -lc \"pwd; ls -d /mnt/c/repos/PovoAgent 2>/dev/null \\|\\| true; ls -d /c/repos/PovoAgent 2>/dev/null \\|\\| true\"$/": {
+            "approve": true,
+            "matchCommandLine": true
+        },
+        "/^bash \\./deploy\\.sh -p opencode -t flutter -d /mnt/c/repos/ServiceLedgerMv$/": {
+            "approve": true,
+            "matchCommandLine": true
+        }
+    }
+}

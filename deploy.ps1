@@ -111,10 +111,16 @@ if (-not $Target) {
 
 # ── Validation ───────────────────────────────────────────────────────────────
 $Platform = $Platform.ToLower()
-$Patterns = @($Pattern) |
-    ForEach-Object { $_ -split '[,;]+' } |
-    ForEach-Object { $_.Trim().ToLower() } |
-    Where-Object { $_ -ne '' }
+$Patterns = @(
+    @($Pattern) |
+        ForEach-Object { $_ -split '[,;]+' } |
+        ForEach-Object { $_.Trim().ToLower() } |
+        Where-Object { $_ -ne '' }
+)
+
+if ($Patterns.Count -eq 0) {
+    Write-Error "No valid pattern was provided. Use -Pattern with one or more values such as 'flutter' or 'flutter,dotnet'."
+}
 
 if ($Platform -notin $AvailablePlatforms) {
     Write-Error "Unknown platform '$Platform'. Available: $($AvailablePlatforms -join ', ')"
