@@ -79,3 +79,9 @@ lib/
 | Local storage        | `hive`, `shared_preferences`    | `shared_preferences` > `hive` |
 | Testing mocks        | `mockito`, `mocktail`           | Ask                           |
 | Code generation      | `freezed`, `json_serializable`  | Both                          |
+
+## Package Version Selection
+
+- Use the **latest stable version** of any package when adding it to `pubspec.yaml`.
+- If the latest stable version causes a dependency conflict (version mismatch or transitive constraint violation), fall back to the **closest compatible version** — the highest patch/minor release that satisfies all existing constraints.
+- Re-evaluate pinned packages on each major project update to move back toward latest stable when conflict no longer exists.

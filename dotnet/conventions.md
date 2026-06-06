@@ -157,3 +157,9 @@ The Presentation layer for Web APIs can follow one of three styles. The choice i
 | API docs (FE)        | `FastEndpoints.Swagger`                    | NSwag-based. Provides `SwaggerDocument()` + `UseSwaggerGen()`. |
 | API framework        | `FastEndpoints`                            | Vertical slice, auto-discovery|
 | Serialization        | `System.Text.Json`                         | Built-in, preferred           |
+
+## Package Version Selection
+
+- Use the **latest stable version** of any NuGet package when adding it to the project.
+- If the latest stable version causes a dependency conflict (version mismatch with an already-referenced package's transitive constraints), fall back to the **closest compatible version** — the highest patch/minor release that satisfies all existing constraints.
+- Re-evaluate pinned packages on each major project update to move back toward latest stable when conflict no longer exists.
