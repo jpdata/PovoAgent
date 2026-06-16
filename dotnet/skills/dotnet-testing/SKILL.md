@@ -1,15 +1,18 @@
 ---
 name: dotnet-testing
-description: 'Generate and run tests for a .NET Clean Architecture project. Use when writing unit tests, integration tests, validating decoupling between layers, or checking test coverage for a C# application.'
+description: 'Generate and run tests for a .NET project (Clean Architecture or Vertical Slice Architecture). Use when writing unit tests, integration tests, validating decoupling between layers/slices, or checking test coverage.'
 argument-hint: 'Feature or layer to test'
 ---
 
 # .NET Testing
 
 ## When to Use
-- Writing or generating tests for a feature or layer.
+- Writing or generating tests for a feature, layer (CA), or slice (VSA).
 - Validating that architectural decoupling is maintained.
 - Checking test coverage.
+
+## Pre-Testing Questions
+- **Architecture style:** Clean Architecture or Vertical Slice Architecture? If not decided, refer to the kickoff diagnostic questions.
 
 ## Procedure
 
@@ -36,7 +39,9 @@ argument-hint: 'Feature or layer to test'
 3. For MAUI/WPF: test ViewModels with mocked use cases.
 4. File: `Presentation.Tests/Controllers/<Controller>Tests.cs`
 
-### Decoupling Validation
+## Decoupling Validation
+
+**Clean Architecture:**
 1. **Domain isolation**: Verify `Domain` project has zero framework package references.
    ```bash
    dotnet list Domain/Domain.csproj package
@@ -60,11 +65,71 @@ argument-hint: 'Feature or layer to test'
    ```
    Expected: no matches.
 
+**Vertical Slice Architecture:**
+1. **Slice isolation**: Verify no cross-slice imports between feature folders.
+   ```bash
+   grep -r "using.*Features/" src/Features/<other-feature>/
+   ```
+   Expected: no matches.
+
+2. **Shared kernel purity**: Verify `Shared/` contains no feature-specific business logic.
+   ```bash
+   grep -r "Feature" src/Shared/
+   ```
+   Expected: no feature names referenced.
+
+3. **Contract stability**: Verify contract/event types are not modified without versioning.
+   ```bash
+   dotnet test Contracts.Tests/Contracts.Tests.csproj
+   ```
+   Expected: all contract tests pass.
+
+4. **Endpoint isolation**: Verify endpoints don't import from other slices' repositories.
+   ```bash
+   grep -r "I.*Repository" src/Features/<feature>/  | grep -v "I<feature>"
+   ```
+   Expected: each slice references only its own repository.
+
 ### Coverage
 ```bash
 dotnet test --collect:"XPlat Code Coverage"
 reportgenerator -reports:**/coverage.cobertura.xml -targetdir:coverage/html
 ```
+
+### Vertical Slice Architecture Testing
+
+When the project uses VSA, tests follow the slice, not the layer:
+
+#### Unit Tests (per endpoint)
+- Test endpoint `HandleAsync` with a mocked repository.
+- File: `Features/<Feature>/Get<Feature>/Get<Feature>EndpointTests.cs`
+- Mock `I<Feature>Repository` using `Moq` or `NSubstitute`.
+- Verify correct response status, DTO mapping, and error handling.
+
+#### Unit Tests (per validator)
+- Test FluentValidation validators in isolation.
+- File: `Features/<Feature>/Create<Feature>/Create<Feature>ValidatorTests.cs`
+- Verify validation rules for valid and invalid requests.
+
+#### Integration Tests (per slice)
+- Test the full vertical slice end-to-end with `WebApplicationFactory<Program>`.
+- Use in-memory database or Testcontainers for real persistence.
+- File: `Features/<Feature>/<Feature>SliceTests.cs`
+- Verify the endpoint works from HTTP request through to database.
+
+#### Unit Tests (repository)
+- Test repository against a test database (EF Core InMemory or Testcontainers).
+- File: `Features/<Feature>/<Feature>RepositoryTests.cs`
+
+#### Contract Tests (cross-slice)
+- Test that shared contracts/events between slices remain compatible.
+- File: `Contracts.Tests/<Event>ContractTests.cs`
+
+**VSA Testing Rules:**
+- Test folders mirror the feature folder structure — not by technical layer.
+- Endpoints tested with mocked repository = fast unit tests.
+- Slice integration tests = full vertical verification.
+- No cross-slice imports in test projects — each slice is testable independently.
 
 ## Test Naming Convention
 - Class: `<ClassUnderTest>Tests.cs`

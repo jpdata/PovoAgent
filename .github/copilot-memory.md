@@ -17,6 +17,8 @@
 - `deploy.ps1` must wrap parsed pattern results in `@(...)`; otherwise a single pattern can become scalar and fail on `$Patterns.Count` under strict mode.
 - `deploy.ps1` now fails fast when parsed patterns are empty (e.g., `-t ","`) to avoid silent no-pattern deploy behavior.
 - `deploy.sh` now mirrors the same empty-pattern fail-fast validation after trimming/splitting parsed values.
+- Vertical Slice Architecture (VSA) is now a first-class architecture choice alongside Clean Architecture (CA) across all patterns (dotnet, flutter, react, angular). The kickoff skill interviews the user with diagnostic questions when the preference is unknown.
+- When a pattern skill has dual architecture support, always ask about the architecture style before generating code if it is not already defined in the project intake.
 
 ## User Corrections
 
@@ -31,9 +33,29 @@
 - `.gitignore` block updated to cover all deployed patterns.
 - See `Docs/multi-pattern-deploy.md` for full details.
 
+## Evolutionary Lifecycle (2026-06-16)
+
+- `skills/change-intake/SKILL.md` is the entry point for all work on existing projects (counterpart to `kickoff` for new projects).
+- The `change-intake` skill produces `CHANGE_REQUEST.md` (features, modifications, refactors) or `BUG_REPORT.md` (bug fixes).
+- Four lightweight workflows exist: Feature (4 phases), Modification (3 phases), Bug Fix (4 phases), Refactor (4 phases).
+- `Docs/evolutionary-lifecycle.md` documents the complete evolutionary lifecycle with Mermaid diagrams and phase tables.
+- `templates/change-request.md` and `templates/bug-report.md` are the document templates for evolutionary work.
+- When working on an existing project, always start with `change-intake` instead of `kickoff`.
+
 ## Carry-Over
 
 - None.
+
+## Vertical Slice Architecture (2026-06-16)
+
+- VSA support added across all 4 patterns (dotnet, flutter, react, angular) and all 7 shared lifecycle skills.
+- The kickoff skill (Question #14) interviews the user with 4 diagnostic questions when architecture preference is unknown.
+- All shared skills (`kickoff`, `planning`, `analysis`, `design`, `specification`, `implementation`, `testing`, `review`) now have dual architecture paths.
+- All pattern conventions now include VSA project structures (e.g., `Features/`, `Shared/`, `Contracts/`) alongside CA structures.
+- All pattern skills (scaffold, feature, testing) now include pre-questions about architecture and dual procedure paths.
+- Pattern architect agents updated to recommend CA or VSA according to the project's choice.
+- VSA Key Rules: slices are self-contained, no cross-slice imports, shared kernel for cross-cutting concerns, contracts for cross-slice events.
+- See `Docs/vertical-slice-architecture.md` for the full list of affected files.
 
 ## Lifecycle Changes (2026-06-03)
 

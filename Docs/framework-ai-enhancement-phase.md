@@ -38,6 +38,17 @@
 - Why: prevent `ConfigInvalidError` startup failures (`Expected array, got "npx"`) in projects generated from this template.
 - Affected files: `platforms/opencode/opencode.json`, `Docs/framework-ai-enhancement-phase.md`.
 
+### 2026-06-16 - Evolutionary lifecycle support added
+
+- Added `skills/change-intake/SKILL.md`: guided intake conversation for work on existing projects (features, modifications, bug fixes, refactors). Routes to appropriate lightweight workflow.
+- Added `templates/change-request.md`: template for feature, modification, and refactor change requests.
+- Added `templates/bug-report.md`: template for bug reports with diagnosis, fix strategy, and verification.
+- Added `Docs/evolutionary-lifecycle.md`: documents the four lightweight workflows (Feature 4-phase, Modification 3-phase, Bug Fix 4-phase, Refactor 4-phase) with Mermaid diagrams, phase tables, and comparison to the new-project lifecycle.
+- Updated `templates/povo.agent.md` and `templates/opencode/povo.agent.md`: `change-intake` added to lifecycle skills; "Existing Project" workflow updated to start with `change-intake` and route by change type.
+- Updated `.github/copilot-memory.md` with new evolutionary lifecycle conventions.
+- Why: the framework was strong for greenfield (new projects) but lacked a structured entry point and lightweight workflows for brownfield work (evolutionary features, corrections, refactors on existing projects).
+- Affected files: `skills/change-intake/SKILL.md`, `templates/change-request.md`, `templates/bug-report.md`, `Docs/evolutionary-lifecycle.md`, `Docs/framework-ai-enhancement-phase.md`, `templates/povo.agent.md`, `templates/opencode/povo.agent.md`, `.github/copilot-memory.md`.
+
 ### 2026-04-25 - Enhancement phase introduced
 
 - Added enhancement-phase rules to `.github/copilot-instructions.md`.

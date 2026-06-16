@@ -43,11 +43,20 @@ Conduct the kickoff as a guided interview. Ask questions in the following order.
     - If "other", ask the user to describe the stack so it can be noted in the intake document.
 12. **AI platform** — Which AI platform will be used in this project? (copilot | opencode | claude | gemini | other)
 13. **Integrations** — Are there any external systems, APIs, or services this project must integrate with?
+14. **Architecture style** — Which architecture style do you prefer for structuring the project?
+    - **Clean Architecture** — horizontal layers (Domain, Application, Infrastructure, Presentation). Best for complex domains, long-lived products, or when strict decoupling between layers is required. Default if the user does not specify.
+    - **Vertical Slice Architecture** — feature-vertical organization where each slice owns its full stack (UI, logic, data access). Best for feature-oriented teams, rapid iteration, or when independent feature delivery is prioritized.
+    - If the user does not know which to choose, ask a few diagnostic questions:
+      - "Will different developers or sub-teams own different features independently?"
+      - "Do you expect features to evolve at different speeds or be deployed independently?"
+      - "Is the domain complex with cross-cutting rules that many features share?"
+      - If most answers lean toward independent features → recommend VSA.
+      - If most answers lean toward shared complex rules → recommend Clean Architecture.
 
 ### Block 5 — Team and Constraints
 
-14. **Team size** — How many developers will work on this project?
-15. **Any known risks or blockers** — Are there known dependencies, risks, or open decisions that could affect the project?
+15. **Team size** — How many developers will work on this project?
+16. **Any known risks or blockers** — Are there known dependencies, risks, or open decisions that could affect the project?
 
 ### Confirmation Step
 
@@ -91,6 +100,7 @@ Apply corrections if needed, then generate the document.
 ## Technology Stack
 - **Pattern:** <flutter | react | angular | dotnet | astro | other>
 - **AI Platform:** <copilot | opencode | claude | gemini | other>
+- **Architecture:** <Clean Architecture | Vertical Slice Architecture>
 - **External Integrations:** <list of integrations>
 
 ## Team and Risks
@@ -103,7 +113,7 @@ Apply corrections if needed, then generate the document.
 
 ## Acceptance Criteria
 
-- All 15 questions have been answered (or explicitly marked as N/A by the user).
+- All 16 questions have been answered (or explicitly marked as N/A by the user).
 - The user has confirmed the summary before the document is generated.
 - The Project Intake Document is created at the root of the project as `PROJECT_INTAKE.md`.
 - The document is passed as input to the Planning skill.

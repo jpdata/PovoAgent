@@ -8,12 +8,13 @@ argument-hint: 'Project name, application type, and main features'
 
 ## When to Use
 - Creating a new Angular application from scratch.
-- Setting up a feature-first project structure with explicit domain, data, and UI boundaries.
+- Setting up a feature-first project structure with explicit domain, data, and UI boundaries (Clean Architecture) or Vertical Slice Architecture feature organization.
 - Configuring standalone bootstrapping, routing, HTTP, and testing foundations while leaving project-specific UI baseline decisions to analysis and design.
 
 ## Procedure
 
 1. **Define key decisions before scaffolding**
+   - Architecture style: Clean Architecture or Vertical Slice Architecture? If not decided, refer to the kickoff diagnostic questions.
    - Ask the user if these are unclear: rendering mode (CSR / SSR / hybrid), UI system (Angular Material / custom design system / utility-first CSS), state complexity, authentication, and i18n requirements.
    - Do not impose a fixed visual baseline from the Angular pattern. The real project's analysis and design phases must decide the design system, visual direction, and shared UI primitives.
 
@@ -27,7 +28,9 @@ argument-hint: 'Project name, application type, and main features'
      ```
    - Current Angular versions create standalone applications by default.
 
-3. **Set up the feature-first folder structure**
+3. **Set up the project folder structure**
+
+   **Clean Architecture (feature-first with domain/data/ui):**
    ```
    src/
    ├── app/
@@ -43,6 +46,35 @@ argument-hint: 'Project name, application type, and main features'
    │   │   ├── pipes/
    │   │   └── directives/
    │   └── features/
+   ├── assets/
+   └── styles.scss
+   ```
+
+   **Vertical Slice Architecture:**
+   ```
+   src/
+   ├── app/
+   │   ├── app.config.ts
+   │   ├── app.routes.ts
+   │   ├── core/
+   │   │   ├── http/interceptors/
+   │   │   ├── layout/
+   │   │   └── config/
+   │   └── contracts/
+   │       └── events/
+   ├── features/
+   │   └── <feature-name>/
+   │       ├── index.ts
+   │       ├── <action>/
+   │       │   ├── <action>.component.ts
+   │       │   ├── <action>.component.html
+   │       │   ├── <action>.component.scss
+   │       │   └── <action>.component.spec.ts
+   │       └── services/
+   ├── shared/
+   │   ├── ui/
+   │   ├── pipes/
+   │   └── directives/
    ├── assets/
    └── styles.scss
    ```
@@ -84,10 +116,18 @@ argument-hint: 'Project name, application type, and main features'
    - Confirm no Angular imports appear inside future `domain/` folders.
 
 ## Decoupling Validation
+
+**Clean Architecture:**
 - `domain/` folders must contain pure TypeScript only.
 - `data/` adapts backend and external systems behind domain ports.
 - `ui/` depends on facades, use cases, or domain models rather than HTTP details.
 - Feature routes lazy-load features instead of centralizing all UI in the app shell.
+
+**Vertical Slice Architecture:**
+- Each feature under `src/app/features/<name>/` contains all its own components, services, and data access.
+- `src/app/shared/` contains only reusable cross-slice code (no feature-specific business logic).
+- Features do not import from other feature slices.
+- `src/app/core/contracts/` defines shared event types and interface contracts between slices.
 
 ## Reference
 - Refer to `conventions.md` in the project root for Angular conventions.

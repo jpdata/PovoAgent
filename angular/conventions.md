@@ -22,6 +22,11 @@ When a technology choice, library, or architectural decision is not explicitly d
 
 ## Project Structure (Feature-First Clean Frontend)
 
+The feature-first structure below serves both Clean Architecture and Vertical Slice Architecture. The difference is internal to each feature folder:
+
+- **Clean Architecture:** feature internally split into `domain/`, `data/`, `ui/` layers with strict dependency rules.
+- **Vertical Slice Architecture:** feature internally organized by action/operation with co-located handler, types, and UI.
+
 ```text
 src/
 ├── app/
@@ -61,14 +66,57 @@ src/
 └── main.ts
 ```
 
+### VSA Variant (Flat per-action within feature)
+
+When using pure Vertical Slice Architecture, the feature folder can be flattened per operation:
+
+```text
+features/
+└── <feature>/
+    ├── create/                           ← Create operation slice
+    │   ├── create.component.ts
+    │   ├── create.handler.ts             ← Business logic for this operation
+    │   ├── create.types.ts               ← Request/response DTOs for this operation
+    │   └── create.validator.ts
+    ├── list/                             ← List operation slice
+    │   ├── list.component.ts
+    │   ├── list.handler.ts
+    │   └── list.types.ts
+    ├── detail/                           ← Detail operation slice
+    │   ├── detail.component.ts
+    │   ├── detail.handler.ts
+    │   └── detail.types.ts
+    ├── <feature>.routes.ts
+    └── index.ts                          ← Public API (exports pages only)
+```
+
+### VSA Key Rules (Angular)
+
+- **Each feature is self-contained.** A feature must not import another feature's internal handlers, types, or components.
+- **Cross-feature communication through `core/` contracts or shared events.** Never import another feature's handler directly.
+- **`core/` and `shared/` are for infrastructure, not business logic.** Design system, HTTP interceptors, layout, and cross-cutting services belong here.
+- **Each feature exports a narrow public API via `index.ts`.** Only pages and top-level components are exported.
+- **Features are lazy-loaded.** Route configuration uses `loadChildren` or `loadComponent` for each feature.
+
 ## Decoupling Rules for Angular
 
+### Clean Architecture (with domain/data/ui split)
 - `domain/` must contain pure TypeScript only. No Angular decorators, `inject()`, `HttpClient`, router, or browser APIs.
 - `data/` implements ports defined in `domain/`. It may use Angular HTTP and DI, but must not import from `ui/`.
 - `ui/` depends on feature state, use cases, or domain models. It must not call API clients directly.
 - `core/` holds app-wide providers, interceptors, layout shell, and bootstrap concerns. It must not become a dumping ground for feature logic.
 - `shared/` contains reusable presentation utilities and components. Keep feature-specific rules out of it.
+
+### Vertical Slice Architecture (flat per-action)
+- **Each feature is autonomous.** A feature must not import another feature's handlers, types, or internal components.
+- **Cross-feature communication through `core/` contracts or shared services.** Never import another feature's handler directly.
+- **`core/` and `shared/` are for infrastructure only.** Design system, HTTP interceptors, layout, and cross-cutting services. Business logic stays in feature slices.
+- **Features are lazy-loaded and independently testable.** Route configuration uses lazy loading for each feature.
+
+### Common Rules (both architectures)
 - Route configuration should lazy-load feature entry points to keep boundaries explicit and bundles smaller.
+- `core/` holds app-wide providers, interceptors, layout shell, and bootstrap concerns. It must not become a dumping ground for feature logic.
+- `shared/` contains reusable presentation utilities and components. Keep feature-specific rules out of it.
 
 ## SOLID in Angular
 

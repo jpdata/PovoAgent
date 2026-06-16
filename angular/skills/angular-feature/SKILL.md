@@ -1,6 +1,6 @@
 ---
 name: angular-feature
-description: 'Create a new feature slice in a modern Angular project. Use when adding a route, screen, data workflow, form flow, or user story across domain, data, and UI boundaries in a feature-first Angular application.'
+description: 'Create a new feature slice in a modern Angular project (Clean Architecture or Vertical Slice Architecture). Use when adding a route, screen, data workflow, form flow, or user story across domain, data, and UI boundaries (CA) or within a self-contained vertical feature slice (VSA).'
 argument-hint: 'Feature name and description'
 ---
 
@@ -8,13 +8,14 @@ argument-hint: 'Feature name and description'
 
 ## When to Use
 - Adding a new routed feature, dashboard screen, workflow, or form flow to an existing Angular project.
-- Implementing a user story that spans domain, data, and UI concerns.
+- Implementing a user story that spans domain, data, and UI concerns (CA) or lives within a self-contained vertical slice (VSA).
 - Creating a feature slice that keeps components decoupled from transport and infrastructure details.
 
 ## Procedure
 
 1. **Define the feature scope**
    - Identify the route entry point, business action(s), data source, and UI states.
+   - **Architecture style:** Confirm whether the project uses Clean Architecture or Vertical Slice Architecture. If not decided, refer to the kickoff diagnostic questions.
    - Ask the user if any of these are unclear: rendering requirements, form complexity, authentication context, UI system, or state complexity.
 
 2. **Create the feature slice structure**
@@ -70,13 +71,91 @@ argument-hint: 'Feature name and description'
    ```
    - Co-locate tests with the code they validate.
 
+### Vertical Slice Architecture Path
+
+When the project uses VSA, create a flat per-action feature slice:
+
+1. **Create the VSA feature slice structure**
+   ```
+   src/app/features/<feature>/
+   ├── index.ts                                   ← Public API barrel export
+   ├── list/
+   │   ├── list.component.ts
+   │   ├── list.component.html
+   │   ├── list.component.scss
+   │   └── list.component.spec.ts
+   ├── create/
+   │   ├── create.component.ts
+   │   ├── create.component.html
+   │   ├── create.component.scss
+   │   └── create.component.spec.ts
+   ├── detail/
+   │   ├── detail.component.ts
+   │   ├── detail.component.html
+   │   ├── detail.component.scss
+   │   └── detail.component.spec.ts
+   ├── models/
+   │   └── <feature>.ts                           ← Entity + DTOs
+   └── services/
+       ├── <feature>-api.service.ts                ← HTTP calls scoped to this feature
+       └── <feature>.service.ts                    ← Business logic service
+   ```
+
+2. **Create the entity and services**
+   - Entity: plain TypeScript type or class at `models/<feature>.ts`.
+   - API service: HTTP calls scoped to this feature only at `services/<feature>-api.service.ts`.
+   - Business service: orchestrates logic, injected into components.
+
+3. **Create components per action**
+   - Each action (list, create, detail, edit) gets its own subfolder with `.ts`, `.html`, `.scss`, `.spec.ts`.
+   - Component injects the feature-scoped service directly (no facade indirection needed).
+   - Use standalone components with `imports` for shared UI pieces.
+
+4. **Add the route** via lazy loading:
+   ```ts
+   // src/app/app.routes.ts
+   {
+     path: '<feature>',
+     loadComponent: () =>
+       import('./features/<feature>/list/list.component').then(m => m.ListComponent),
+   },
+   {
+     path: '<feature>/create',
+     loadComponent: () =>
+       import('./features/<feature>/create/create.component').then(m => m.CreateComponent),
+   },
+   ```
+
+5. **Create tests** (co-located per action)
+   ```
+   src/app/features/<feature>/list/list.component.spec.ts
+   src/app/features/<feature>/create/create.component.spec.ts
+   src/app/features/<feature>/services/<feature>.service.spec.ts
+   ```
+
+**VSA Key Rules:**
+- No separate `domain/`, `data/`, `ui/` subfolders — each action folder is self-contained.
+- Components inject the feature-scoped service directly.
+- `src/app/shared/` provides reusable cross-slice UI, pipes, and directives.
+- `src/app/core/contracts/` defines shared event types for cross-slice communication.
+- Features do not import from other features.
+
 ## Decoupling Checklist
+
+**Clean Architecture:**
 - [ ] Domain files contain zero Angular imports.
 - [ ] Data files do not import from `ui/`.
 - [ ] UI files do not call `HttpClient` or API services directly.
 - [ ] Writable signals remain private to the facade/store.
 - [ ] Route loading does not bypass the feature boundary.
 - [ ] Swapping the page component does not require changes to the data or domain layers.
+
+**Vertical Slice Architecture:**
+- [ ] Each feature slice is self-contained — no imports from other feature slices.
+- [ ] `src/app/shared/` contains only reusable cross-slice code, no feature-specific logic.
+- [ ] `src/app/core/contracts/` defines shared event types for cross-slice communication.
+- [ ] Component can be tested with mocked services (no HTTP).
+- [ ] Swapping the component doesn't affect other slices.
 
 ## Reference
 - Refer to `conventions.md` in the project root for Angular conventions.

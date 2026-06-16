@@ -51,8 +51,41 @@ src/
 └── main.tsx                           ← Bootstrap: providers, router, DI wiring
 ```
 
+## Project Structure (Vertical Slice Architecture for React)
+
+```text
+src/
+├── features/                          ← Each feature is a self-contained vertical slice
+│   └── {feature-name}/
+│       ├── components/                ← Feature-scoped presentational components
+│       ├── pages/                     ← Route entry points for this feature
+│       ├── hooks/                     ← Feature-scoped use-case hooks
+│       ├── api/                       ← Feature-scoped API calls (Axios / fetch wrappers)
+│       ├── types/                     ← Feature DTOs, request/response shapes
+│       └── index.ts                   ← Public API: exports components and pages only
+├── shared/                            ← Cross-cutting shared code
+│   ├── ui/                            ← Design system primitives (shadcn/ui + Tailwind)
+│   ├── hooks/                         ← Shared hooks (auth, theme, i18n)
+│   ├── http/                          ← Axios instance, interceptors
+│   ├── store/                         ← Zustand slices for cross-cutting state (auth, notifications)
+│   ├── layouts/                       ← Shared layout shells
+│   └── types/                         ← Shared TypeScript types
+├── contracts/                         ← Cross-slice communication contracts
+│   └── events/                        ← Event type definitions for cross-slice events
+└── main.tsx                           ← Bootstrap: providers, router, DI wiring
+```
+
+### VSA Key Rules (React)
+
+- **Each slice is self-contained.** A feature's components, hooks, API calls, and types live together under `features/{feature-name}/`.
+- **Slices do not reference each other directly.** Cross-slice communication through `contracts/events/` or shared hooks. Never import another slice's internal hooks or components.
+- **shared/ is for infrastructure, not business logic.** Design system, HTTP client, shared layouts, and cross-cutting hooks belong here. Feature business rules stay in slices.
+- **Each slice exports a narrow public API via `index.ts`.** Only pages and top-level components are exported. Internal hooks and API modules are slice-private.
+- **Routes compose slices.** `main.tsx` wires routes that point to each slice's exported pages. Slices are lazy-loaded where possible.
+
 ## Decoupling Rules
 
+### Clean Architecture
 ```
 Presentation  ──►  Application  ──►  Domain
 Infrastructure ──►  Application  ──►  Domain
@@ -62,7 +95,6 @@ Application   ✗──►  Presentation    (FORBIDDEN)
 ```
 
 **Detailed rules:**
-
 - `domain/` contains pure TypeScript only. No React, no Axios, no Zustand, no library imports.
 - `domain/validators/` returns `{ valid: boolean; errors: string[] }`. No Zod schemas in this layer.
 - `application/use-cases/` hooks orchestrate domain rules and call `application/interfaces/` contracts. They never import from `presentation/`.
@@ -74,21 +106,37 @@ Application   ✗──►  Presentation    (FORBIDDEN)
 
 **Swappability test:** A different design system can replace `src/presentation/` without any changes in `application/`, `domain/`, or `infrastructure/`.
 
+### Vertical Slice Architecture
+- **Slices are autonomous.** A slice must not import another slice's `hooks/`, `api/`, or internal `components/`.
+- **Cross-slice communication through contracts/events/.** Use typed events or shared hook contracts. Never import another slice's internal modules.
+- **shared/ is for infrastructure.** UI primitives, HTTP client, shared layouts, and cross-cutting hooks. Business logic stays in feature slices.
+- **Slices are independently testable.** Each slice's tests run without importing other slices.
+
 ## SOLID in React
 
-- **S:** Each component renders one concern. Each hook manages one use case. Each repository targets one aggregate. Validators validate one entity.
-- **O:** New features add new hooks, components, repositories, and entities. Existing ones are not modified for unrelated requirements.
-- **L:** Hooks and repositories implementing the same interface are interchangeable. A mock repository replacing a real one must satisfy all consumers.
-- **I:** Props interfaces contain only what the component uses. Repository interfaces split by read and write concerns when consumers differ.
-- **D:** Pages depend on use-case hook outputs (abstractions). They never import concrete repositories or HTTP clients.
+These principles apply to both architectures:
+
+- **S:** Clean Architecture — each component renders one concern, each hook manages one use case. VSA — each slice handles one feature.
+- **O:** Clean Architecture — new features add new hooks, components, repositories. VSA — new features create new slices; existing slices are not modified.
+- **L:** Clean Architecture — hooks and repositories implementing the same interface are interchangeable. VSA — slices implementing the same contract are interchangeable.
+- **I:** Clean Architecture — props interfaces contain only what the component uses. VSA — cross-slice contracts are narrow.
+- **D:** Clean Architecture — pages depend on use-case hook outputs, never on concrete repositories. VSA — slices depend on contracts/abstractions, not on other slices' concretions.
 
 ## Design Patterns in React
 
+### Clean Architecture Patterns
 - **Repository pattern:** `application/interfaces/IXxxRepository.ts` defines the contract. `infrastructure/repositories/xxx-repository.ts` implements it.
 - **Use Case / View Model Hook:** `application/use-cases/use-xxx-use-case.ts` — a custom hook that encapsulates one business operation and returns the view-model the page needs.
 - **Adapter pattern:** `infrastructure/adapters/xxx-adapter.ts` — pure function mapping API DTO → domain entity.
 - **Strategy via props:** Pass the use-case hook result into the component tree via props to allow the same components to work with different data sources.
 - **Composition over inheritance:** Build complex UI by composing small, focused presentational components. No class inheritance in React components.
+
+### Vertical Slice Architecture Patterns
+- **Feature-scoped hooks:** Each slice's business logic lives in `features/{name}/hooks/`. These hooks call the slice's own API modules.
+- **Feature-scoped API modules:** Each slice has its own `api/` folder with Axios wrappers scoped to that feature's endpoints.
+- **Narrow public API via index.ts:** Each slice exports only pages and top-level components. Internal hooks and API modules are slice-private.
+- **Lazy-loaded routes:** Routes in `main.tsx` lazy-load each slice's pages for optimal code splitting.
+- **Cross-slice events:** Use typed event emitters or shared Zustand slices for cross-cutting notifications. Never import another slice's internal hook directly.
 
 ## Presentation Layer Conventions
 

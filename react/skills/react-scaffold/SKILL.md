@@ -1,6 +1,6 @@
 ---
 name: react-scaffold
-description: 'Scaffold a new React + TypeScript + Tailwind project with Clean Architecture four-layer structure. Use when creating a new React app: Vite setup, Tailwind v4, shadcn/ui, TanStack Query, Zustand, React Router v7, Axios, and the Presentation / Application / Domain / Infrastructure folder tree.'
+description: 'Scaffold a new React + TypeScript + Tailwind project with Clean Architecture four-layer structure or Vertical Slice Architecture feature-slice structure. Use when creating a new React app: Vite setup, Tailwind v4, shadcn/ui, TanStack Query, Zustand, React Router v7, Axios, and the chosen folder tree.'
 argument-hint: 'Project name and main feature list'
 ---
 
@@ -16,6 +16,7 @@ argument-hint: 'Project name and main feature list'
 
 Ask the user **before starting** if any of these are undefined:
 
+- Architecture style: Clean Architecture or Vertical Slice Architecture? If not decided, refer to the kickoff diagnostic questions.
 - App type: SPA (Vite) or SSR (Next.js)?
 - Back-end API: REST or GraphQL? Base URL known?
 - Authentication: JWT / OAuth / session?
@@ -104,8 +105,9 @@ Add initial components as needed:
 npx shadcn@latest add button input card dialog label
 ```
 
-### Step 5 — Create the four-layer folder structure
+### Step 5 — Create the folder structure
 
+#### Clean Architecture
 ```bash
 mkdir -p src/presentation/components/ui
 mkdir -p src/presentation/layouts
@@ -119,6 +121,18 @@ mkdir -p src/domain/validators
 mkdir -p src/infrastructure/http
 mkdir -p src/infrastructure/repositories
 mkdir -p src/infrastructure/adapters
+```
+
+#### Vertical Slice Architecture
+```bash
+mkdir -p src/features
+mkdir -p src/shared/ui
+mkdir -p src/shared/hooks
+mkdir -p src/shared/http
+mkdir -p src/shared/store
+mkdir -p src/shared/layouts
+mkdir -p src/shared/types
+mkdir -p src/contracts/events
 ```
 
 ### Step 6 — Create the HTTP client
@@ -158,6 +172,7 @@ export function cn(...inputs: ClassValue[]) {
 
 ### Step 8 — Bootstrap `main.tsx`
 
+#### Clean Architecture
 ```tsx
 // src/main.tsx
 import './styles/globals.css';
@@ -185,10 +200,33 @@ createRoot(document.getElementById('root')!).render(
 );
 ```
 
+#### Vertical Slice Architecture
+```tsx
+// src/main.tsx
+import './styles/globals.css';
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter } from 'react-router-dom';
+import { App } from './app';
+
+const queryClient = new QueryClient();
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <App />
+      </BrowserRouter>
+    </QueryClientProvider>
+  </StrictMode>
+);
+```
+
 ### Step 9 — Create the app layout shell
 
 ```tsx
-// src/presentation/layouts/AppShell.tsx
+// src/shared/layouts/AppShell.tsx  (or src/presentation/layouts/AppShell.tsx for Clean Architecture)
 import { Outlet } from 'react-router-dom';
 
 export function AppShell() {
@@ -207,6 +245,7 @@ export function AppShell() {
 
 ### Step 10 — Set up router
 
+#### Clean Architecture
 ```tsx
 // src/app.tsx
 import { Routes, Route } from 'react-router-dom';
@@ -217,6 +256,23 @@ export function App() {
     <Routes>
       <Route element={<AppShell />}>
         {/* Feature routes are added here */}
+      </Route>
+    </Routes>
+  );
+}
+```
+
+#### Vertical Slice Architecture
+```tsx
+// src/app.tsx
+import { Routes, Route } from 'react-router-dom';
+import { AppShell } from './shared/layouts/AppShell';
+
+export function App() {
+  return (
+    <Routes>
+      <Route element={<AppShell />}>
+        {/* Lazy-loaded feature routes are added here */}
       </Route>
     </Routes>
   );
@@ -255,11 +311,19 @@ npx vitest run      # Must pass with zero failures
 
 ## Decoupling Validation
 
-After scaffold, verify:
+After scaffold, verify the architecture-specific rules:
+
+**Clean Architecture:**
 - `src/domain/` contains no React or library imports.
 - `src/infrastructure/` does not import from `src/presentation/`.
 - `src/presentation/` does not import from `src/infrastructure/`.
 - `src/main.tsx` is the only place where concrete repositories are instantiated.
+
+**Vertical Slice Architecture:**
+- Each feature under `src/features/<name>/` contains all its own components, hooks, and API calls.
+- `src/shared/` contains only reusable cross-slice code (no feature-specific business logic).
+- `src/features/` slices do not import from other `src/features/` slices.
+- `src/contracts/` defines shared event types and interface contracts between slices.
 
 ## Reference
 

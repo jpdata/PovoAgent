@@ -1,6 +1,6 @@
 ---
 name: react-feature
-description: 'Create a new feature in a React Clean Architecture project end-to-end: domain entity, application interface + use-case hook, infrastructure repository + adapter, presentational components, and page composition. Use when implementing a user story or adding a new routed screen.'
+description: 'Create a new feature in a React project (Clean Architecture or Vertical Slice Architecture) end-to-end. CA: domain entity, application interface + use-case hook, infrastructure repository + adapter, presentational components, and page composition. VSA: feature-scoped folder with entity, API module, hooks, and page in one slice. Use when implementing a user story or adding a new routed screen.'
 argument-hint: 'Feature name and description'
 ---
 
@@ -9,13 +9,14 @@ argument-hint: 'Feature name and description'
 ## When to Use
 
 - Adding a new feature (routed page + use case + API calls + UI) to an existing React project.
-- Implementing a user story end-to-end across all four layers.
+- Implementing a user story end-to-end across all four layers (CA) or within a self-contained feature slice (VSA).
 - Creating a new module that must remain decoupled from the rest of the app.
 
 ## Pre-Implementation Questions
 
 Ask the user **before starting** if any of these are unclear:
 
+- **Architecture style:** Clean Architecture or Vertical Slice Architecture? If not decided, refer to the kickoff diagnostic questions.
 - What is the primary entity or resource this feature manages?
 - What API endpoints does it call? (HTTP method + path)
 - What UI states are needed? (loading, empty, error, success)
@@ -298,8 +299,125 @@ const xxxRepo = new XxxRepository();
 </XxxRepositoryContext.Provider>
 ```
 
+### Vertical Slice Architecture Path
+
+When the project uses VSA, create a self-contained feature folder:
+
+#### Step 1 — Create the feature folder structure
+```
+src/features/<feature>/
+├── index.ts                                ← Public API barrel export
+├── <feature>-entity.ts                     ← Business entity (pure TS)
+├── <feature>-api.ts                        ← HTTP calls scoped to this feature
+├── use-<feature>.ts                        ← Data-fetching hooks (TanStack Query)
+├── use-<feature>-mutations.ts              ← Mutation hooks (create/update/delete)
+├── <Feature>Page.tsx                       ← Page component (view-model wiring)
+└── components/
+    ├── <Feature>Card.tsx
+    ├── <Feature>List.tsx
+    └── Create<Feature>Form.tsx
+```
+
+#### Step 2 — Define the entity and API module
+```ts
+// src/features/<feature>/<feature>-entity.ts
+export interface XxxEntity {
+  id: string;
+  // domain fields only
+}
+```
+
+```ts
+// src/features/<feature>/<feature>-api.ts
+import { httpClient } from '@/shared/http/axios-instance';
+import { XxxEntity } from './<feature>-entity';
+
+export async function fetchXxxList(): Promise<XxxEntity[]> {
+  const { data } = await httpClient.get<XxxEntity[]>('/xxx');
+  return data;
+}
+
+export async function createXxx(dto: CreateXxxDto): Promise<XxxEntity> {
+  const { data } = await httpClient.post<XxxEntity>('/xxx', dto);
+  return data;
+}
+```
+
+#### Step 3 — Create hooks
+```ts
+// src/features/<feature>/use-<feature>.ts
+import { useQuery } from '@tanstack/react-query';
+import { fetchXxxList } from './<feature>-api';
+
+export function useXxxList() {
+  return useQuery({
+    queryKey: ['xxx'],
+    queryFn: fetchXxxList,
+  });
+}
+```
+
+```ts
+// src/features/<feature>/use-<feature>-mutations.ts
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { createXxx } from './<feature>-api';
+
+export function useCreateXxx() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: createXxx,
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['xxx'] }),
+  });
+}
+```
+
+#### Step 4 — Create components and page
+```tsx
+// src/features/<feature>/<Feature>Page.tsx
+import { useNavigate } from 'react-router-dom';
+import { useXxxList } from './use-<feature>';
+import { useCreateXxx } from './use-<feature>-mutations';
+import { XxxList } from './components/<Feature>List';
+import { CreateXxxForm } from './components/Create<Feature>Form';
+
+export function XxxPage() {
+  const navigate = useNavigate();
+  const { data: items = [], isLoading } = useXxxList();
+  const { mutate: create, isPending } = useCreateXxx();
+
+  return (
+    <div className="flex flex-col gap-8">
+      <div>
+        <h2 className="text-2xl font-semibold tracking-tight">Xxx</h2>
+        <p className="text-muted-foreground">Manage your xxx items.</p>
+      </div>
+      <CreateXxxForm onSubmit={create} isLoading={isPending} />
+      <XxxList items={items} isLoading={isLoading} onSelect={(id) => navigate(`/xxx/${id}`)} />
+    </div>
+  );
+}
+```
+
+#### Step 5 — Register the route (lazy-loaded)
+
+In `src/app.tsx`:
+```tsx
+import { lazy } from 'react';
+const XxxPage = lazy(() => import('./features/<feature>/<Feature>Page').then(m => ({ default: m.XxxPage })));
+
+<Route path="/xxx" element={<XxxPage />} />
+```
+
+**VSA Key Rules:**
+- No separate `domain/`, `application/`, `infrastructure/` folders — the feature slice owns it all.
+- Hooks call the feature-scoped API module directly (no repository interface/context indirection).
+- `src/shared/` provides reusable cross-slice components, hooks, and HTTP client.
+- `src/contracts/` defines shared event types for cross-slice communication.
+- Features do not import from other features.
+
 ## Decoupling Checklist
 
+**Clean Architecture:**
 - [ ] `domain/entities/xxx-entity.ts` has zero React or library imports.
 - [ ] `domain/validators/xxx-validator.ts` has zero React or library imports.
 - [ ] `application/use-cases/` hooks do not import from `presentation/` or `infrastructure/`.
@@ -308,9 +426,14 @@ const xxxRepo = new XxxRepository();
 - [ ] `presentation/pages/XxxPage.tsx` is the only file that wires the use-case hook to components.
 - [ ] Swapping the `XxxCard` and `XxxList` components requires zero changes in `application/` or `infrastructure/`.
 
+**Vertical Slice Architecture:**
+- [ ] Each feature slice is self-contained — no imports from other feature slices.
+- [ ] `src/shared/` contains only reusable cross-slice code, no feature-specific logic.
+- [ ] `src/contracts/` defines shared event types for cross-slice communication.
+- [ ] Hooks call the feature-scoped API module directly — no repository context indirection.
+- [ ] `index.ts` exports only what other slices need via `lazy()` route imports.
+- [ ] Swapping the page component doesn't affect other slices.
+
 ## Reference
 
-Refer to `conventions.md` in the project root for React conventions.
-
-## Reference
 - Refer to `conventions.md` in the project root for React conventions.

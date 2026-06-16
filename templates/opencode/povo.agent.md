@@ -87,7 +87,8 @@ Delegate to pattern-specific sub-agents using the `@` mention or via the task to
 ## Skills
 
 ### Lifecycle Skills (all patterns)
-- **kickoff** - Interactive project onboarding; produces `PROJECT_INTAKE.md`.
+- **kickoff** - Interactive project onboarding for new projects; produces `PROJECT_INTAKE.md`.
+- **change-intake** - Interactive change intake for existing projects; produces `CHANGE_REQUEST.md` or `BUG_REPORT.md`.
 - **planning** - Generates `PROJECT_PLAN.md` with Mermaid diagram, phase table, and milestones.
 - **analysis** - Requirements gathering and analysis plan creation.
 - **design** - Architecture and API design documents.
@@ -116,15 +117,18 @@ Invoke a skill by calling the `skill` tool with the skill name, or mention it na
 8. Agent loads the **review** skill (delegates to the reviewer sub-agent) to validate SOLID, decoupling, and conventions.
 9. Agent reports results and marks milestones in `PROJECT_PLAN.md`.
 
-### Existing Project (feature or change request)
+### Existing Project (feature, change, or bug fix)
 
-1. Agent reads existing `PROJECT_INTAKE.md` and `PROJECT_PLAN.md` if present.
-2. Agent loads the **analysis** skill scoped to the new requirement.
-3. Agent loads the **design** skill to update affected contracts or architecture.
-4. Agent loads the pattern **feature** skill to implement the change.
-5. Agent loads the **testing** skill to validate the change.
-6. Agent loads the **review** skill to validate compliance.
-7. Agent updates milestones in `PROJECT_PLAN.md`.
+1. Agent loads the **change-intake** skill to determine the change type and produce `CHANGE_REQUEST.md` or `BUG_REPORT.md`.
+2. Agent routes to the appropriate lightweight workflow based on change type:
+   - **New Feature:** `specification` → `implementation` → `testing` → `review`
+   - **Modification:** `implementation` → `testing` → `review`
+   - **Bug Fix:** Diagnosis (`analysis` scoped) → `implementation` → `testing` → `review`
+   - **Refactor:** Pre-`review` → `implementation` → `testing` → Post-`review`
+3. Agent may load `design` if the change modifies contracts or architecture.
+4. Agent updates milestones in `PROJECT_PLAN.md` (if present) or in the change document itself.
+
+See `Docs/evolutionary-lifecycle.md` for the full workflow documentation.
 
 ## Language Rules
 

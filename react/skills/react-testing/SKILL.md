@@ -1,6 +1,6 @@
 ---
 name: react-testing
-description: 'Generate and run tests for a React Clean Architecture project. Use when writing unit tests for domain validators, application use-case hooks, infrastructure repositories, or presentational components. Covers Vitest, React Testing Library, and MSW for API mocking.'
+description: 'Generate and run tests for a React project (Clean Architecture or Vertical Slice Architecture). Use when writing unit tests for domain validators, application use-case hooks, infrastructure repositories, presentational components (CA), or feature-scoped hooks, API modules, and page components (VSA). Covers Vitest, React Testing Library, and MSW.'
 argument-hint: 'Layer or feature to test (domain / application / infrastructure / presentation / all)'
 ---
 
@@ -9,10 +9,13 @@ argument-hint: 'Layer or feature to test (domain / application / infrastructure 
 ## When to Use
 
 - Writing unit tests for domain validators or entities.
-- Testing application use-case hooks in isolation.
-- Testing infrastructure repositories against a mocked API.
+- Testing application use-case hooks in isolation (CA) or feature-scoped hooks directly (VSA).
+- Testing infrastructure repositories against a mocked API (CA) or feature API modules (VSA).
 - Testing presentational components and pages with React Testing Library.
 - Running decoupling validation checks.
+
+## Pre-Testing Questions
+- **Architecture style:** Clean Architecture or Vertical Slice Architecture? If not decided, refer to the kickoff diagnostic questions.
 
 ## Test Stack
 
@@ -229,9 +232,78 @@ describe('UsersPage', () => {
 });
 ```
 
+### Page integration test (VSA — mock the feature API module):
+
+```tsx
+// src/features/users/UsersPage.test.tsx
+import { render, screen, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { MemoryRouter } from 'react-router-dom';
+import { vi } from 'vitest';
+import { UsersPage } from './UsersPage';
+import * as userApi from './user-api';
+
+vi.mock('./user-api');
+const mockUsers = [{ id: '1', name: 'Alice', email: 'a@b.com', createdAt: new Date() }];
+vi.mocked(userApi.fetchUsers).mockResolvedValue(mockUsers);
+
+function Wrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <MemoryRouter>
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        {children}
+      </QueryClientProvider>
+    </MemoryRouter>
+  );
+}
+
+describe('UsersPage', () => {
+  it('should render user list after loading', async () => {
+    render(<UsersPage />, { wrapper: Wrapper });
+    await waitFor(() => screen.getByText('Alice'));
+    expect(screen.getByText('Alice')).toBeInTheDocument();
+  });
+});
+```
+
+### Vertical Slice Architecture Testing
+
+When the project uses VSA, tests follow the slice structure:
+
+#### Unit Tests (feature-scoped hooks)
+- Test hooks with `renderHook` + mocked API module via `vi.mock('./<feature>-api')`.
+- File: `src/features/<feature>/use-<feature>.test.ts`
+- Verify hook returns correct data, handles errors, and manages loading state.
+
+#### Unit Tests (feature API modules)
+- Test API module with MSW to mock HTTP layer.
+- File: `src/features/<feature>/<feature>-api.test.ts`
+- Verify correct endpoint URLs and response handling.
+
+#### Component Tests (feature components)
+- Test components with mock data via props — no hook mocking needed.
+- File: `src/features/<feature>/components/<Feature>Card.test.tsx`
+- Verify rendering and user interaction callbacks.
+
+#### Page Integration Tests (VSA)
+- Mock the feature API module using `vi.mock()`.
+- Test the full page with mocked data, loading, and error states.
+- File: `src/features/<feature>/<Feature>Page.test.tsx`
+
+#### Cross-Slice Contract Tests
+- Test that shared contract types/events in `src/contracts/` remain consistent.
+- File: `src/contracts/events/<event>.test.ts`
+
+**VSA Testing Rules:**
+- Test files co-located within the feature folder — no separate `__tests__/` tree.
+- Mock at the API module boundary (`vi.mock('./<feature>-api')`), not at the HTTP client level.
+- No context providers needed — hooks call the API module directly.
+- Features are independently testable — no cross-slice test dependencies.
+- Page tests verify UX states, not business logic.
+
 ## Decoupling Validation
 
-Run these checks to verify layer boundaries are intact:
+**Clean Architecture** — Run these checks to verify layer boundaries are intact:
 
 ```bash
 # Domain layer: zero React or library imports
@@ -249,6 +321,26 @@ grep -r "from '.*infrastructure\|from \".*infrastructure" src/presentation/compo
 # Application use-cases: no presentation imports
 grep -r "from '.*presentation" src/application/use-cases/
 # Expected: no output
+```
+
+**Vertical Slice Architecture** — Run these checks to verify slice boundaries are intact:
+
+```bash
+# Slice isolation: no cross-feature imports
+grep -r "from '.*features/" src/features/<feature>/ | grep -v "features/<feature>"
+# Expected: no output (each feature only imports from itself)
+
+# Shared purity: no feature-specific logic in shared/
+grep -r "<Feature>" src/shared/
+# Expected: no feature names referenced
+
+# Contract stability: test shared contracts
+npx vitest run src/contracts/
+# Expected: all contract tests pass
+
+# API module is mocked at the hook level, not the HTTP client level
+grep -r "import.*httpClient" src/features/<feature>/*.test.ts
+# Expected: no direct HTTP client usage in tests
 ```
 
 ## Run Coverage

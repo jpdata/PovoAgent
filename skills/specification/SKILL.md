@@ -1,6 +1,6 @@
 ---
 name: specification
-description: 'Transforms the Design Document into formal Specification Documents (SPEC_<feature>.md) for each feature, module, or contract. Use after Design and before Scaffold/Implementation. Each spec defines behavior through preconditions, postconditions, concrete scenarios, and verifiable acceptance criteria. Specs are the primary input for Implementation and Testing.'
+description: 'Transforms the Design Document into formal Specification Documents (SPEC_<feature>.md) for each feature, module, or contract. Use after Design and before Scaffold/Implementation. Each spec defines behavior through preconditions, postconditions, concrete scenarios, and verifiable acceptance criteria. Works with both Clean Architecture (specs organized by layer) and Vertical Slice Architecture (specs organized by slice). Specs are the primary input for Implementation and Testing.'
 ---
 
 # Specification Skill
@@ -17,9 +17,11 @@ Transform the Design Document into a set of formal **Specification Documents** �
 
 ## Workflow
 
-1. Read the Design Document (architecture, API contracts, data models, layer boundaries).
+1. Read the Design Document to identify the architecture style (Clean Architecture or Vertical Slice Architecture).
 2. Identify all features, use cases, and contracts that require a specification.
 3. For each identified unit, write one Specification Document following the structure below.
+   - **Clean Architecture:** each spec targets a specific layer (e.g., Domain entity, Application use case, Presentation component).
+   - **Vertical Slice Architecture:** each spec covers a full vertical slice (endpoint → handler → data access).
 4. Ensure every scenario is concrete: real inputs, real expected outputs, no vague language.
 5. Ensure every acceptance criterion is verifiable by a test without ambiguity.
 6. Cross-check specs against Design Document API contracts and data models for consistency.
@@ -28,7 +30,7 @@ Transform the Design Document into a set of formal **Specification Documents** �
 
 ## Inputs
 
-- **Design Document** — architecture diagram, API contracts, data models, layer boundaries.
+- **Design Document** — architecture style, API contracts, data models, layer or slice boundaries.
 - **Analysis Plan** — use cases and user flows for behavioral coverage verification.
 
 ## Outputs
@@ -47,7 +49,8 @@ Transform the Design Document into a set of formal **Specification Documents** �
 |---|---|
 | ID | SPEC-<NNN> |
 | Feature | <feature name> |
-| Layer | <Presentation / Application / Domain / Infrastructure> |
+| Architecture | <Clean Architecture | Vertical Slice Architecture> |
+| Layer / Slice | <Layer name for CA (e.g., Domain, Application) | Slice name for VSA (e.g., Orders, Products)> |
 | Status | Draft / Approved |
 | Author | <author> |
 | Date | <date> |
@@ -135,7 +138,8 @@ A spec is only ready for Implementation when it meets all of the following:
 
 ## Decoupling Rule
 
-Specifications are layer-aware but layer-neutral: a spec for a Domain entity must not reference UI components, and a spec for a Presentation component must not describe persistence logic. Each spec covers exactly one layer boundary.
+- **Clean Architecture:** Specifications are layer-aware but layer-neutral: a spec for a Domain entity must not reference UI components, and a spec for a Presentation component must not describe persistence logic. Each spec covers exactly one layer boundary.
+- **Vertical Slice Architecture:** Each spec covers a complete vertical slice (UI contract → handler behavior → data access expectations). The spec describes the slice as a cohesive unit; internal slice structure is an implementation detail. Cross-slice references go through defined contracts only.
 
 ## Pattern Reference
 
