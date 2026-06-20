@@ -13,11 +13,11 @@ The entry point for all work on existing projects is the `change-intake` skill, 
 When a user wants to work on an existing project, the agent invokes `change-intake` instead of `kickoff`. The intake conversation covers four blocks:
 
 1. **Existing Project Context** — Which project? What stack? What architecture?
-2. **Change Type and Motivation** — New feature, modification, bug fix, or refactor? Why?
-3. **Scope and Impact** — What features, layers, slices, and files are affected?
+2. **Change Type and Motivation** — New feature, modification, bug fix, refactor, or assessment? Why?
+3. **Scope and Impact** — What features, layers, slices, and files are affected? For assessments, what scope (Full / Architecture / Technical / Flows)?
 4. **Risks and Verification** — What tests exist? What could break? How to rollback?
 
-The intake produces either a `CHANGE_REQUEST.md` or a `BUG_REPORT.md`, and the change type determines which lightweight workflow follows.
+The intake produces a `CHANGE_REQUEST.md`, `BUG_REPORT.md`, or `ASSESSMENT_REPORT.md`, and the change type determines which lightweight workflow follows.
 
 ---
 
@@ -29,6 +29,7 @@ flowchart TB
     CI --> |Modification| WF2
     CI --> |Bug Fix| WF3
     CI --> |Refactor| WF4
+    CI --> |Assessment| WF5
 
     subgraph WF1 ["Feature (4 phases)"]
         direction LR
@@ -50,6 +51,11 @@ flowchart TB
         REpre([Pre-Review]) --> IM4([Implementation]) --> TE4([Testing]) --> REpost([Post-Review])
     end
 
+    subgraph WF5 ["Assessment (3 phases + optional CRs)"]
+        direction LR
+        AS([Analysis<br/>Assessment Mode]) --> RV([Review<br/>Validation]) --> CR([Generate<br/>Change Requests])
+    end
+
     style CI fill:#e87722,color:#fff,stroke:#c05a10
     style SP fill:#7b68ee,color:#fff
     style IM1 fill:#50c878,color:#fff
@@ -66,6 +72,9 @@ flowchart TB
     style IM4 fill:#50c878,color:#fff
     style TE4 fill:#f4a460,color:#fff
     style REpost fill:#f4a460,color:#fff
+    style AS fill:#7b68ee,color:#fff
+    style RV fill:#f4a460,color:#fff
+    style CR fill:#50c878,color:#fff
 ```
 
 **Color legend:**
@@ -154,13 +163,50 @@ flowchart TB
 
 ---
 
+## Workflow E — Assessment
+
+**When:** Holistic analysis of an existing project to identify improvements across architecture, technical aspects, and flows. Produces a prioritized Assessment Report with concrete recommendations and optionally generates individual Change Requests for execution.
+
+**Duration:** 3 phases (Analysis → Review → Generate CRs) + optional CR execution
+
+| # | Phase | Skill | Input | Output | Gate |
+|---|---|---|---|---|---|
+| 1 | Analysis (Assessment) | `analysis` (Assessment Mode) | `ASSESSMENT_REPORT.md` stub + project code | `ASSESSMENT_REPORT.md` with categorized findings | Findings reviewed by user |
+| 2 | Review | `review` + Reviewer agent | `ASSESSMENT_REPORT.md` + conventions | Findings validated against conventions | No false positives |
+| 3 | Generate CRs | `change-intake` (per finding) | `ASSESSMENT_REPORT.md` findings | Individual `CHANGE_REQUEST.md` per finding (optional) | CRs approved |
+
+**Assessment dimensions:**
+
+| Dimension | What is checked | Skill phase |
+|---|---|---|
+| **Architecture** | SOLID compliance, layer/slice boundaries, decoupling, design patterns, folder structure | Step 3 |
+| **Technical** | Performance, security, maintainability, dependencies, technical debt | Step 4 |
+| **Flows** | User flows, data flows, API contracts, cross-slice communication, process optimization | Step 5 |
+
+**Severity levels:**
+
+| Severity | Definition | Action |
+|---|---|---|
+| **Critical** | Security vulnerability, data loss risk, or architecture violation that blocks releases. | Must fix now. Generate CR. |
+| **High** | Significant technical debt, performance bottleneck, or SOLID violation affecting multiple features. | Should fix in current cycle. Generate CR. |
+| **Medium** | Code quality issue, missing pattern, or convention violation with localized impact. | Plan for next cycle. Optional CR. |
+| **Low** | Minor improvement, naming suggestion, or optional optimization. | Nice to have; no urgency. No CR needed. |
+
+**Generate Change Requests (step 3):**
+1. After the Assessment Report is approved, ask the user: "Should I generate Change Requests for the Critical and High findings?"
+2. For each selected finding, invoke `change-intake` to produce an individual `CHANGE_REQUEST.md`.
+3. Each CR follows the Feature or Modification workflow depending on whether it adds new capability or modifies existing behavior.
+4. Link each CR back to the Assessment Report via the **Generated Change Requests** table.
+
+---
+
 ## Comparison: New Project vs. Existing Project
 
 | Aspect | New Project | Existing Project |
 |---|---|---|
 | Entry skill | `kickoff` | `change-intake` |
-| Output document | `PROJECT_INTAKE.md` | `CHANGE_REQUEST.md` or `BUG_REPORT.md` |
-| Phase count | 8 | 3–4 |
+| Output document | `PROJECT_INTAKE.md` | `CHANGE_REQUEST.md`, `BUG_REPORT.md`, or `ASSESSMENT_REPORT.md` |
+| Phase count | 8 | 3–4 (5 for Assessment) |
 | Architecture defined | During kickoff | Already defined (read from existing docs) |
 | Stack chosen | During kickoff | Already chosen |
 | Scaffold needed | Yes | No |
@@ -175,6 +221,7 @@ flowchart TB
 |---|---|---|
 | `CHANGE_REQUEST.md` | Feature, Modification, Refactor | Scope, motivation, expected state, affected layers/slices, test plan, rollback |
 | `BUG_REPORT.md` | Bug Fix | Observed vs expected behavior, reproduction steps, diagnosis, fix strategy, regression tests |
+| `ASSESSMENT_REPORT.md` | Assessment | Executive summary, architecture/technical/flow findings, prioritized recommendations, generated CRs |
 | `SPEC_<Feature>.md` | Feature (new on existing) | Formal specification for the new feature (same format as new-project specs) |
 | Review Report | All workflows | SOLID, decoupling, and convention compliance validation |
 

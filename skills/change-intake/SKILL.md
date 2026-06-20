@@ -1,17 +1,17 @@
 ---
 name: change-intake
-description: 'Guides the intake conversation for changes to an existing project: new features, modifications, bug fixes, or refactors. Use when working on an existing project before any implementation begins. Produces a Change Request or Bug Report document that routes to the appropriate lightweight workflow.'
+description: 'Guides the intake conversation for changes to an existing project: new features, modifications, bug fixes, refactors, or assessments. Use when working on an existing project before any implementation begins. Produces a Change Request, Bug Report, or Assessment Report document that routes to the appropriate lightweight workflow.'
 ---
 
 # Change Intake Skill
 
 ## Objective
 
-Collect all information needed to work on an **existing project** through an interactive conversation. At the end, produce either a **Change Request Document** (for features, modifications, or refactors) or a **Bug Report Document** (for bug fixes). The document type determines which lightweight workflow is followed.
+Collect all information needed to work on an **existing project** through an interactive conversation. At the end, produce either a **Change Request Document** (for features, modifications, or refactors), a **Bug Report Document** (for bug fixes), or an **Assessment Report Document** (for project assessments). The document type determines which lightweight workflow is followed.
 
 ## When to Use
 
-- A user says "I need to add a feature to my project", "I found a bug in...", "I want to refactor module X", or describes work on an already-initialized project.
+- A user says "I need to add a feature to my project", "I found a bug in...", "I want to refactor module X", "I want to assess my project for improvements", or describes work on an already-initialized project.
 - Before any Implementation, Testing, or Review work begins on an existing project.
 - When the user explicitly mentions an existing project name or references artifacts like `PROJECT_INTAKE.md`, `PROJECT_PLAN.md`, or `SPEC_*.md`.
 - Do **not** use this skill for new projects — use `kickoff` instead.
@@ -42,6 +42,7 @@ Conduct the intake as a guided interview. Ask questions in the following order. 
    - **Modification** — Changing the behavior, UI, or logic of an existing feature.
    - **Bug fix** — Correcting unintended or incorrect behavior.
    - **Refactor** — Restructuring code without changing external behavior.
+   - **Assessment** — Holistic analysis of an existing project to identify improvements across architecture, technical aspects, and flows. Produces an `ASSESSMENT_REPORT.md` with prioritized findings and optional generated Change Requests.
 6. **Motivation** — Why is this change needed? What problem does it solve or what value does it add?
 7. **Priority** — How urgent or important is this change? (Critical / High / Medium / Low)
 
@@ -126,6 +127,25 @@ Change Intake → Pre-Review → Implementation → Testing → Post-Review
 | 2 | Implementation | `implementation` + `<pattern>-feature` | Refactored code (behavior unchanged) |
 | 3 | Testing | `testing` + `<pattern>-testing` | Confirmation: all existing tests still pass |
 | 4 | Post-Review | `review` + Reviewer agent | Final review confirming violations resolved |
+
+### Assessment
+
+```
+Change Intake → Analysis (Assessment Mode) → Assessment Report → (optional) Generate Change Requests
+```
+
+| # | Phase | Skill | Output |
+|---|---|---|---|
+| 1 | Analysis (Assessment) | `analysis` (assessment mode) | `ASSESSMENT_REPORT.md` with categorized findings |
+| 2 | Review | `review` + Reviewer agent | Validation of findings against conventions |
+| 3 | Generate CRs | `change-intake` (per finding) | Individual `CHANGE_REQUEST.md` per high-priority finding (optional) |
+
+The **analysis (assessment mode)** step performs a systematic review of the existing project across three dimensions:
+- **Architecture:** SOLID compliance, layer/slice boundaries, decoupling, design patterns, folder structure.
+- **Technical:** Performance, security, maintainability, code quality, dependency health, technical debt.
+- **Flows:** User flows, data flows, API contracts, cross-slice communication, process optimization.
+
+Each finding is categorized by severity (Critical / High / Medium / Low) and includes a concrete recommendation. High and Critical findings may optionally spawn individual Change Requests for execution.
 
 ## Inputs
 
@@ -262,11 +282,85 @@ Produced for **bug fix** changes. Note: the **Root Cause** and **Fix Strategy** 
 - [ ] Bug report reviewed and approved by user
 ```
 
+### Assessment Report Document (`ASSESSMENT_REPORT.md`)
+
+Produced for **assessment** type changes.
+
+```markdown
+# Assessment Report
+
+## Metadata
+
+| Field | Value |
+|---|---|
+| ID | ASMT-<NNN> |
+| Project | <project name> |
+| Type | Assessment |
+| Priority | <overall priority> |
+| Architecture | Clean Architecture / Vertical Slice Architecture |
+| Author | <author> |
+| Date | <date> |
+
+## Executive Summary
+
+<One-paragraph summary of the project's current health, key strengths, and critical issues found.>
+
+## Scope
+
+- **Assessment Type:** <Architecture / Technical / Flows / Full>
+- **Features Analyzed:** <list>
+- **Layers / Slices Analyzed:** <list>
+- **Files Reviewed:** <count and key files>
+
+## Architecture Findings
+
+| # | Severity | Category | Finding | Recommendation | 
+|---|---|---|---|---|
+| 1 | <Critical / High / Medium / Low> | <SOLID / Decoupling / Patterns / Structure> | <description> | <concrete action> |
+
+## Technical Findings
+
+| # | Severity | Category | Finding | Recommendation |
+|---|---|---|---|---|
+| 1 | <Critical / High / Medium / Low> | <Performance / Security / Maintainability / Dependencies / Debt> | <description> | <concrete action> |
+
+## Flow Findings
+
+| # | Severity | Category | Finding | Recommendation |
+|---|---|---|---|---|
+| 1 | <Critical / High / Medium / Low> | <User Flow / Data Flow / API Contract / Cross-Slice> | <description> | <concrete action> |
+
+## Prioritized Recommendations
+
+### Critical
+<Must fix now. List with linked CRs.>
+
+### High
+<Should fix in the current cycle.>
+
+### Medium
+<Plan for next cycle.>
+
+### Low
+<Nice to have; no urgency.>
+
+## Generated Change Requests
+
+| CR ID | Finding Reference | Priority | Status |
+|---|---|---|---|
+| CR-<NNN> | <finding #> | <priority> | Open / In Progress / Done |
+
+## Approval
+
+- [ ] Assessment report reviewed and approved by user
+- [ ] Critical and High findings have generated Change Requests (if applicable)
+```
+
 ## Acceptance Criteria
 
 - All 16 questions have been answered (or skipped because the answer was available from existing project documents).
 - The user has confirmed the summary before the document is generated.
-- The correct document type is produced: `CHANGE_REQUEST.md` for features/modifications/refactors, `BUG_REPORT.md` for bug fixes.
+- The correct document type is produced: `CHANGE_REQUEST.md` for features/modifications/refactors, `BUG_REPORT.md` for bug fixes, `ASSESSMENT_REPORT.md` for assessments.
 - The document clearly states the **change type** and the **recommended workflow** (which skills to invoke next).
 - The Diagnosis section of the bug report is filled before implementation begins.
 
@@ -281,7 +375,7 @@ The technology pattern and architecture style are read from the existing project
 ## Relationship to Other Skills
 
 - **`kickoff`** — Use for new projects. This skill is the counterpart for existing projects.
-- **`analysis`** — May be invoked scoped to the change request for impact analysis or bug diagnosis.
+- **`analysis`** — May be invoked scoped to the change request for impact analysis, bug diagnosis, or in assessment mode for a full project audit.
 - **`specification`** — Invoked for new features on existing projects to produce `SPEC_<Feature>.md`.
 - **`design`** — Invoked only if the change modifies contracts or architecture.
 - **`implementation`** — Always invoked after intake to apply the change.
