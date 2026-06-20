@@ -93,7 +93,7 @@ function Select-MultiOption {
     Write-Host "  Enter one or more numbers separated by commas (e.g. 1,3)" -ForegroundColor DarkGray
     do {
         $raw    = Read-Host "Select"
-        $parts  = $raw -split '[,\s]+' | Where-Object { $_ -match '^\d+$' }
+        $parts  = @($raw -split '[,\s]+' | Where-Object { $_ -match '^\d+$' })
         $valid  = $parts.Count -gt 0 -and (-not ($parts | Where-Object { [int]$_ -lt 1 -or [int]$_ -gt $Options.Count }))
         if (-not $valid) { Write-Host "  Invalid selection, try again." -ForegroundColor Yellow }
     } while (-not $valid)
