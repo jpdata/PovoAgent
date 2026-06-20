@@ -42,6 +42,35 @@
 - `templates/change-request.md` and `templates/bug-report.md` are the document templates for evolutionary work.
 - When working on an existing project, always start with `change-intake` instead of `kickoff`.
 
+## Assessment Workflow (2026-06-20)
+
+- `skills/change-intake/SKILL.md` now supports **Assessment** as a fifth change type, producing `ASSESSMENT_REPORT.md`.
+- `skills/analysis/SKILL.md` operates in **two modes**: Mode 1 (New Project Analysis) and **Mode 2 (Existing Project Assessment)** with 8 steps including cache generation.
+- Assessment performs a holistic audit across three dimensions: **Architecture** (SOLID, decoupling, patterns, structure), **Technical** (performance, security, maintainability, dependencies, debt), and **Flows** (user flows, data flows, API contracts, cross-slice).
+- `Docs/evolutionary-lifecycle.md` includes **Workflow E — Assessment** (3 phases + optional CR generation).
+- `templates/assessment-report.md` is the output template with severity-classified findings and linked Change Requests.
+- `Docs/assessment-workflow.md` is the comprehensive documentation for the Assessment workflow.
+- Severity levels: Critical → Generate CR + fix now; High → Generate CR + current cycle; Medium → optional CR + next cycle; Low → document only.
+- Assessment is divergent (broad discovery) then convergent (targeted CRs), unlike other workflows that start with a specific change.
+
+## Project Cache (2026-06-20)
+
+- `templates/project-cache.md` defines the `PROJECT_CACHE.md` structure: Metadata, Architecture Map (CA layers or VSA slices + contracts), Domain Map, File Index, Key Decisions & Constraints, Cache Refresh Log.
+- `skills/analysis/SKILL.md` Mode 2, Step 2 reads `PROJECT_CACHE.md` first if fresh — avoids redundant file scans.
+- `skills/analysis/SKILL.md` Mode 2, Step 8 generates or updates `PROJECT_CACHE.md` after Assessment approval. Sets stale date (Last Updated + 30 days).
+- `skills/change-intake/SKILL.md` Pre-Intake Check reads `PROJECT_CACHE.md` as the first context source. If stale (>30 days), asks user about re-assessment.
+- Cache lifecycle: **Fresh ≤30 days** → all skills skip scans (~1-2 tool calls for context vs ~8-12 without). **Stale >30 days** → warn user. **Invalidated** → fall back to full scan.
+- `Docs/assessment-workflow.md` documents the full cache lifecycle with Mermaid decision flow and impact metrics.
+
+## Git Hooks Deploy (2026-06-20)
+
+- `deploy.ps1` now supports `-GitHooks` (`-gh`) switch and interactive prompt to deploy git hooks.
+- `deploy.sh` now supports `-g` flag and interactive prompt for the same.
+- Hooks are deployed to `$Target/.git/hooks/pre-commit`, made executable on Unix.
+- The pre-commit hook auto-increments the patch version in the target project's `VERSION` file on every commit.
+- Interactive mode asks "Deploy git hooks (pre-commit auto-version-bump)? (y/N)" when flag is not provided.
+- `README.md` documents the hook with usage examples, behavior description, and updated deploy process.
+
 ## Carry-Over
 
 - None.

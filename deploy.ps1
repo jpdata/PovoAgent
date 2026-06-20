@@ -20,11 +20,15 @@
 .PARAMETER Force
     Overwrite existing files without prompting.
 
+.PARAMETER GitHooks
+    Deploy git hooks (pre-commit auto-version-bump) to target project's .git/hooks/.
+
 .EXAMPLE
     .\deploy.ps1 -Platform copilot -Pattern flutter -Target C:\Projects\MyApp
     .\deploy.ps1 -p copilot -t flutter -d C:\Projects\MyApp
     .\deploy.ps1 -Platform copilot -Pattern "flutter,dotnet" -Target C:\Projects\MyApp
     .\deploy.ps1 -p copilot -t "flutter,dotnet" -d C:\Projects\MyApp
+    .\deploy.ps1 -Platform copilot -Pattern flutter -Target C:\Projects\MyApp -GitHooks
     .\deploy.ps1   # interactive mode
 #>
 
@@ -33,7 +37,8 @@ param(
     [Alias("p")]  [string]$Platform,
     [Alias("t")]  [string[]]$Pattern,
     [Alias("d")]  [string]$Target,
-    [Alias("f")]  [switch]$Force
+    [Alias("f")]  [switch]$Force,
+    [Alias("gh")] [switch]$GitHooks
 )
 
 Set-StrictMode -Version Latest
@@ -107,6 +112,11 @@ if (-not $Pattern -or $Pattern.Count -eq 0) {
 }
 if (-not $Target) {
     $Target = Read-Host "`nTarget project path"
+}
+
+if (-not $GitHooks) {
+    $hooksChoice = Read-Host "`nDeploy git hooks (pre-commit auto-version-bump)? (y/N)"
+    $GitHooks = $hooksChoice -match '^[Yy]$'
 }
 
 # ── Validation ───────────────────────────────────────────────────────────────
@@ -278,12 +288,12 @@ Write-Host ""
 $totalFiles = 0
 
 # 1. Platform instructions template
-Write-Host "[1/6] Platform instructions ($Platform)..." -ForegroundColor Cyan
+Write-Host "[1/7] Platform instructions ($Platform)..." -ForegroundColor Cyan
 $platformSource = Join-Path $PlatformsDir $Platform
 $totalFiles += Copy-TreeSafe -Source $platformSource -Destination $Target -Label "Platform template"
 
 # 2. Agent template
-Write-Host "[2/6] Agent template..." -ForegroundColor Cyan
+Write-Host "[2/7] Agent template..." -ForegroundColor Cyan
 $platformAgentSource = Join-Path $TemplatesDir "$Platform\povo.agent.md"
 $agentSource = if (Test-Path $platformAgentSource) { $platformAgentSource } else { Join-Path $TemplatesDir "povo.agent.md" }
 if (Test-Path $agentSource) {
@@ -301,12 +311,12 @@ if (Test-Path $agentSource) {
 }
 
 # 3. Lifecycle skills (generic)
-Write-Host "[3/6] Lifecycle skills..." -ForegroundColor Cyan
+Write-Host "[3/7] Lifecycle skills..." -ForegroundColor Cyan
 $targetSkills = Join-Path $Target $Config.SkillsDir
 $totalFiles += Copy-TreeSafe -Source $SkillsDir -Destination $targetSkills -Label "Lifecycle skills"
 
 # 4. Pattern conventions
-Write-Host "[4/6] Pattern conventions ($($Patterns -join ', '))..." -ForegroundColor Cyan
+Write-Host "[4/7] Pattern conventions ($($Patterns -join ', '))..." -ForegroundColor Cyan
 $multiPattern = $Patterns.Count -gt 1
 foreach ($pat in $Patterns) {
     $patternDir       = Join-Path $ScriptRoot $pat
@@ -326,7 +336,7 @@ foreach ($pat in $Patterns) {
 }
 
 # 5. Pattern agents and skills
-Write-Host "[5/6] Pattern agents and skills ($($Patterns -join ', '))..." -ForegroundColor Cyan
+Write-Host "[5/7] Pattern agents and skills ($($Patterns -join ', '))..." -ForegroundColor Cyan
 $targetAgents = Join-Path $Target $Config.AgentsDir
 foreach ($pat in $Patterns) {
     $patternDir    = Join-Path $ScriptRoot $pat
@@ -341,7 +351,7 @@ foreach ($pat in $Patterns) {
 }
 
 # 6. Update .gitignore
-Write-Host "[6/6] Updating .gitignore..." -ForegroundColor Cyan
+Write-Host "[6/7] Updating .gitignore..." -ForegroundColor Cyan
 
 $gitDir = Join-Path $Target ".git"
 if (-not (Test-Path $gitDir)) {
@@ -418,9 +428,45 @@ if (Test-Path $gitignorePath) {
     Write-Host "  [CREATED] .gitignore" -ForegroundColor White
 }
 
+# 7. Git hooks (optional)
+Write-Host "[7/7] Git hooks..." -ForegroundColor Cyan
+$hooksSource = Join-Path $ScriptRoot "hooks"
+$preCommitSource = Join-Path $hooksSource "pre-commit"
+if ($GitHooks) {
+    if (Test-Path $preCommitSource) {
+        $gitDir = Join-Path $Target ".git"
+        $hooksDestDir = Join-Path $gitDir "hooks"
+        $preCommitDest = Join-Path $hooksDestDir "pre-commit"
+
+        if (-not (Test-Path $hooksDestDir)) {
+            New-Item -ItemType Directory -Path $hooksDestDir -Force | Out-Null
+        }
+
+        if ((Test-Path $preCommitDest) -and (-not $Force)) {
+            Write-Host "  [EXISTS] pre-commit - use -Force to overwrite" -ForegroundColor Yellow
+        } else {
+            Copy-Item -Path $preCommitSource -Destination $preCommitDest -Force
+            $totalFiles++
+            Write-Host "  [DEPLOYED] pre-commit hook (auto-version-bump on commit)" -ForegroundColor White
+
+            # Make executable on Unix; on Windows, Git Bash handles .sh naturally
+            if ($IsLinux -or $IsMacOS) {
+                try { chmod +x $preCommitDest } catch { }
+            }
+        }
+    } else {
+        Write-Host "  [SKIP] hooks/pre-commit not found in framework" -ForegroundColor DarkGray
+    }
+} else {
+    Write-Host "  [SKIP] Git hooks not selected (use -GitHooks to enable)" -ForegroundColor DarkGray
+}
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Green
 Write-Host "  Deploy complete - $totalFiles file(s) copied." -ForegroundColor Green
+if ($GitHooks -and (Test-Path $preCommitDest)) {
+    Write-Host "  Git hooks  : deployed (.git/hooks/pre-commit)" -ForegroundColor White
+}
 Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Green
 Write-Host ""

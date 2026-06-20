@@ -49,6 +49,39 @@
 - Why: the framework was strong for greenfield (new projects) but lacked a structured entry point and lightweight workflows for brownfield work (evolutionary features, corrections, refactors on existing projects).
 - Affected files: `skills/change-intake/SKILL.md`, `templates/change-request.md`, `templates/bug-report.md`, `Docs/evolutionary-lifecycle.md`, `Docs/framework-ai-enhancement-phase.md`, `templates/povo.agent.md`, `templates/opencode/povo.agent.md`, `.github/copilot-memory.md`.
 
+### 2026-06-20 - Assessment Workflow added to Evolutionary Lifecycle
+
+- Added **"Assessment"** as a new change type in `skills/change-intake/SKILL.md`, alongside Feature, Modification, Bug Fix, and Refactor. Produces `ASSESSMENT_REPORT.md`.
+- Extended `skills/analysis/SKILL.md` into **two modes**: Mode 1 (New Project Analysis, original behavior) and **Mode 2 (Existing Project Assessment)**. Mode 2 performs a systematic audit across 7 steps: Confirm Scope → Gather Context → Architecture Assessment → Technical Assessment → Flow Assessment → Prioritize & Produce Report → Generate Change Requests.
+- Created `templates/assessment-report.md` — template with Executive Summary, Health Summary (1-5 rating per dimension), Architecture/Technical/Flow Findings tables (severity, category, location, finding, recommendation), Prioritized Recommendations (Critical/High/Medium/Low), and Generated Change Requests table.
+- Added **Workflow E — Assessment** to `Docs/evolutionary-lifecycle.md` with updated Mermaid diagram (WF5 subgraph), phase table (3 phases + optional CRs), assessment dimensions table, severity levels table, and updated Comparison and Documents Produced tables.
+- Created `Docs/assessment-workflow.md` — comprehensive documentation including workflow diagram, phase breakdown, assessment dimensions in detail (what to check per dimension), severity classification with examples, from-findings-to-execution flow, example conversation, cross-platform/pattern notes, and relationship to other skills.
+- Assessment routes: Change Intake (Assessment) → Analysis (Mode 2) → Review Validation → Generate CRs (optional) → Execution per CR.
+- Severity levels: **Critical** (security/data loss/architecture blocks → fix now + generate CR), **High** (significant debt/bottleneck/SOLID → current cycle + generate CR), **Medium** (localized code quality → next cycle, optional CR), **Low** (minor improvement → document, no CR).
+- Why: the framework had structured entry points for specific changes (features, modifications, bug fixes, refactors) but lacked a holistic audit capability for discovering what should change. The Assessment workflow fills this gap with a divergent-then-convergent methodology.
+- Affected files: `skills/change-intake/SKILL.md`, `skills/analysis/SKILL.md`, `templates/assessment-report.md`, `Docs/evolutionary-lifecycle.md`, `Docs/assessment-workflow.md`.
+
+### 2026-06-20 - Project Cache (PROJECT_CACHE.md) mechanism added
+
+- Created `templates/project-cache.md` — structured, machine-readable snapshot template with 7 sections: Metadata, Architecture Map (CA layers or VSA slices + contracts + dependency graph + shared kernel), Domain Map (aggregate roots, domain services, business rules summary), File Index (config, entry points, key directories with file counts, test files), Key Decisions & Constraints, and Cache Refresh Log.
+- Updated `skills/analysis/SKILL.md` Mode 2 with **Step 2 (Gather Context)**: reads `PROJECT_CACHE.md` first if it exists and is fresh, using it as the primary source for architecture map, domain map, and file index.
+- Updated `skills/analysis/SKILL.md` Mode 2 with **Step 8 (Generate/Update Project Cache)**: new step that produces or updates `PROJECT_CACHE.md` after the Assessment Report is approved. Populates all sections per architecture style. Sets stale date (Last Updated + 30 days). Records assessment ID for traceability. Cache freshness: Fresh ≤30 days (all skills skip redundant scans); Stale >30 days (warn user, suggest re-assessment); Invalidated (fall back to full scan).
+- Updated `skills/analysis/SKILL.md` Mode 2 Outputs and Acceptance Criteria to include `PROJECT_CACHE.md`.
+- Updated `skills/change-intake/SKILL.md` **Pre-Intake Check**: reads `PROJECT_CACHE.md` in priority order. If fresh, uses as primary context source. If stale, asks user about re-assessment. Updated When to Use and Relationship to Other Skills sections.
+- Updated `Docs/assessment-workflow.md` with **Phase 4 (Generate/Update Project Cache)**, a new **Project Cache Lifecycle** section (Mermaid decision flow diagram, cache generation triggers table, cache freshness rules table, impact comparison table: ~8-12 tool calls without cache → ~1-2 with cache), and updated Artifacts Produced and Relationship to Other Skills tables.
+- Updated `Docs/evolutionary-lifecycle.md` Documents Produced table with `PROJECT_CACHE.md` entry.
+- Why: every skill interacting with an existing project was re-reading documents and re-exploring directory structures on each invocation, consuming ~8-12 tool calls just for context gathering. The cache provides a structured, authoritative snapshot that all skills can read in ~1-2 tool calls, significantly reducing context consumption and improving response speed.
+- Affected files: `templates/project-cache.md`, `skills/analysis/SKILL.md`, `skills/change-intake/SKILL.md`, `Docs/assessment-workflow.md`, `Docs/evolutionary-lifecycle.md`, `VERSION`.
+
+### 2026-06-20 - Git hooks deploy option added to deploy scripts
+
+- Added `-GitHooks` (`-gh`) switch to `deploy.ps1` and `-g` flag to `deploy.sh` to optionally deploy the pre-commit auto-version-bump hook to the target project.
+- Both scripts prompt the user in interactive mode ("Deploy git hooks (pre-commit auto-version-bump)? (y/N)") when the flag is not provided.
+- New step [7/7] copies `hooks/pre-commit` to `$Target/.git/hooks/pre-commit`. On Linux/macOS, makes it executable with `chmod +x`. Displays [DEPLOYED] confirmation.
+- Updated `README.md` with: repository structure (hooks/ folder), deploy examples with `-GitHooks` / `-g`, Git Hooks section explaining auto-version-bump behavior, updated deploy process list (step 7).
+- Why: the framework already included a pre-commit hook for self-versioning, but target projects had no way to get it. This closes the gap by deploying the hook as an optional step during project setup.
+- Affected files: `deploy.ps1`, `deploy.sh`, `README.md`, `Docs/framework-ai-enhancement-phase.md`.
+
 ### 2026-04-25 - Enhancement phase introduced
 
 - Added enhancement-phase rules to `.github/copilot-instructions.md`.

@@ -222,6 +222,7 @@ flowchart TB
 | `CHANGE_REQUEST.md` | Feature, Modification, Refactor | Scope, motivation, expected state, affected layers/slices, test plan, rollback |
 | `BUG_REPORT.md` | Bug Fix | Observed vs expected behavior, reproduction steps, diagnosis, fix strategy, regression tests |
 | `ASSESSMENT_REPORT.md` | Assessment | Executive summary, architecture/technical/flow findings, prioritized recommendations, generated CRs |
+| `PROJECT_CACHE.md` | Assessment (auto-generated) | Architecture map, domain map, file index, key decisions. Read by all skills to skip redundant context gathering. Generated/updated after each Assessment. |
 | `SPEC_<Feature>.md` | Feature (new on existing) | Formal specification for the new feature (same format as new-project specs) |
 | Review Report | All workflows | SOLID, decoupling, and convention compliance validation |
 

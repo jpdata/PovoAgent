@@ -9,6 +9,7 @@
 #   ./deploy.sh -p copilot -t flutter -d /path/to/project
 #   ./deploy.sh                  # interactive mode
 #   ./deploy.sh -p copilot -t flutter -d /path/to/project -f   # force overwrite
+#   ./deploy.sh -p copilot -t flutter -d /path/to/project -g   # deploy git hooks
 # ──────────────────────────────────────────────────────────────────────────────
 
 set -euo pipefail
@@ -24,21 +25,24 @@ PLATFORM=""
 PATTERN=""
 TARGET=""
 FORCE=false
+GIT_HOOKS=false
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
-while getopts "p:t:d:fh" opt; do
+while getopts "p:t:d:fgh" opt; do
     case $opt in
         p) PLATFORM="$OPTARG" ;;
         t) PATTERN="$OPTARG" ;;
         d) TARGET="$OPTARG" ;;
         f) FORCE=true ;;
+        g) GIT_HOOKS=true ;;
         h)
-            echo "Usage: $0 [-p platform] [-t pattern[,pattern2,...]] [-d target] [-f]"
+            echo "Usage: $0 [-p platform] [-t pattern[,pattern2,...]] [-d target] [-f] [-g]"
             echo "  -p  AI platform: copilot | gemini | claude"
             echo "  -t  Technology pattern(s): flutter | dotnet | angular | react | astro"
             echo "      Accepts comma-separated values: -t flutter,dotnet"
             echo "  -d  Target project path"
             echo "  -f  Force overwrite existing files"
+            echo "  -g  Deploy git hooks (pre-commit auto-version-bump)"
             exit 0
             ;;
         *) echo "Unknown option. Use -h for help." >&2; exit 1 ;;
@@ -130,6 +134,13 @@ fi
 if [[ -z "$TARGET" ]]; then
     echo ""
     read -rp "Target project path: " TARGET
+fi
+
+if [[ "$GIT_HOOKS" != true ]]; then
+    read -rp $'\nDeploy git hooks (pre-commit auto-version-bump)? (y/N): ' hooks_choice
+    if [[ "$hooks_choice" =~ ^[Yy]$ ]]; then
+        GIT_HOOKS=true
+    fi
 fi
 
 # ── Validation ───────────────────────────────────────────────────────────────
@@ -232,12 +243,12 @@ echo -e "${GREEN}═════════════════════
 echo ""
 
 # 1. Platform instructions template
-echo -e "${CYAN}[1/6] Platform instructions (${PLATFORM})...${NC}"
+echo -e "${CYAN}[1/7] Platform instructions (${PLATFORM})...${NC}"
 PLATFORM_SOURCE="$PLATFORMS_DIR/$PLATFORM"
 copy_tree_safe "$PLATFORM_SOURCE" "$TARGET" "Platform template"
 
 # 2. Agent template
-echo -e "${CYAN}[2/6] Agent template...${NC}"
+echo -e "${CYAN}[2/7] Agent template...${NC}"
 PLATFORM_AGENT_SOURCE="$TEMPLATES_DIR/$PLATFORM/povo.agent.md"
 if [[ -f "$PLATFORM_AGENT_SOURCE" ]]; then
     AGENT_SOURCE="$PLATFORM_AGENT_SOURCE"
@@ -257,13 +268,13 @@ if [[ -f "$AGENT_SOURCE" ]]; then
 fi
 
 # 3. Lifecycle skills (generic)
-echo -e "${CYAN}[3/6] Lifecycle skills...${NC}"
+echo -e "${CYAN}[3/7] Lifecycle skills...${NC}"
 copy_tree_safe "$SKILLS_DIR" "$TARGET/$SKILLS_TARGET_DIR" "Lifecycle skills"
 
 # 4. Pattern conventions
 MULTI_PATTERN=false
 [[ ${#PATTERNS[@]} -gt 1 ]] && MULTI_PATTERN=true
-echo -e "${CYAN}[4/6] Pattern conventions ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
+echo -e "${CYAN}[4/7] Pattern conventions ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
 for pat in "${PATTERNS[@]}"; do
     PATTERN_DIR="$SCRIPT_DIR/$pat"
     CONVENTIONS_SOURCE="$PATTERN_DIR/conventions.md"
@@ -286,7 +297,7 @@ for pat in "${PATTERNS[@]}"; do
 done
 
 # 5. Pattern agents & skills
-echo -e "${CYAN}[5/6] Pattern agents & skills ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
+echo -e "${CYAN}[5/7] Pattern agents & skills ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
 for pat in "${PATTERNS[@]}"; do
     PATTERN_DIR="$SCRIPT_DIR/$pat"
     copy_tree_safe "$PATTERN_DIR/agents" "$TARGET/$AGENTS_DIR" "Pattern agents ($pat)"
@@ -294,7 +305,7 @@ for pat in "${PATTERNS[@]}"; do
 done
 
 # 6. Update .gitignore
-echo -e "${CYAN}[6/6] Updating .gitignore...${NC}"
+echo -e "${CYAN}[6/7] Updating .gitignore...${NC}"
 
 if [[ ! -d "$TARGET/.git" ]]; then
     echo -e "  ${YELLOW}[WARN] No git repository detected at '$TARGET'.${NC}"
@@ -387,9 +398,40 @@ else
     echo -e "  ${WHITE}[CREATED] .gitignore${NC}"
 fi
 
+# 7. Git hooks (optional)
+echo -e "${CYAN}[7/7] Git hooks...${NC}"
+HOOKS_SOURCE="$SCRIPT_DIR/hooks"
+PRE_COMMIT_SOURCE="$HOOKS_SOURCE/pre-commit"
+if [[ "$GIT_HOOKS" == true ]]; then
+    if [[ -f "$PRE_COMMIT_SOURCE" ]]; then
+        HOOKS_DEST_DIR="$TARGET/.git/hooks"
+        PRE_COMMIT_DEST="$HOOKS_DEST_DIR/pre-commit"
+
+        if [[ ! -d "$HOOKS_DEST_DIR" ]]; then
+            mkdir -p "$HOOKS_DEST_DIR"
+        fi
+
+        if [[ -f "$PRE_COMMIT_DEST" ]] && [[ "$FORCE" != true ]]; then
+            echo -e "  ${YELLOW}[EXISTS] pre-commit — use -f to overwrite${NC}"
+        else
+            cp "$PRE_COMMIT_SOURCE" "$PRE_COMMIT_DEST"
+            chmod +x "$PRE_COMMIT_DEST" 2>/dev/null || true
+            TOTAL_FILES=$((TOTAL_FILES + 1))
+            echo -e "  ${WHITE}[DEPLOYED] pre-commit hook (auto-version-bump on commit)${NC}"
+        fi
+    else
+        echo -e "  ${GRAY}[SKIP] hooks/pre-commit not found in framework${NC}"
+    fi
+else
+    echo -e "  ${GRAY}[SKIP] Git hooks not selected (use -g to enable)${NC}"
+fi
+
 # ── Summary ──────────────────────────────────────────────────────────────────
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  Deploy complete — ${TOTAL_FILES} file(s) copied.${NC}"
+if [[ "$GIT_HOOKS" == true ]] && [[ -f "$TARGET/.git/hooks/pre-commit" ]]; then
+    echo -e "${WHITE}  Git hooks  : deployed (.git/hooks/pre-commit)${NC}"
+fi
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
 echo ""

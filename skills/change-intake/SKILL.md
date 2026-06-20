@@ -13,14 +13,18 @@ Collect all information needed to work on an **existing project** through an int
 
 - A user says "I need to add a feature to my project", "I found a bug in...", "I want to refactor module X", "I want to assess my project for improvements", or describes work on an already-initialized project.
 - Before any Implementation, Testing, or Review work begins on an existing project.
-- When the user explicitly mentions an existing project name or references artifacts like `PROJECT_INTAKE.md`, `PROJECT_PLAN.md`, or `SPEC_*.md`.
+- When the user explicitly mentions an existing project name or references artifacts like `PROJECT_INTAKE.md`, `PROJECT_CACHE.md`, `PROJECT_PLAN.md`, or `SPEC_*.md`.
 - Do **not** use this skill for new projects — use `kickoff` instead.
 
 ## Pre-Intake Check
 
-Before starting the conversation, ask the user:
+Before starting the conversation, read the project's cache and documents in this order:
 
-> "Is this work on an existing project? If so, does the project have a `PROJECT_INTAKE.md` or design documents I can read?"
+1. **`PROJECT_CACHE.md`** — Read first. If it exists and is fresh, use it as the primary source for project metadata, architecture map, domain map, and file index. This avoids redundant tool calls. If it's stale (>30 days), ask the user:
+
+> "The project cache is over 30 days old. Would you like me to re-assess the project first to refresh it?"
+
+2. **`PROJECT_INTAKE.md`**, **`PROJECT_PLAN.md`**, design documents, and `SPEC_*.md` — Read after the cache to fill in any gaps.
 
 If available, read the existing project documents to pre-fill as much context as possible. This reduces repetitive questions.
 
@@ -375,9 +379,10 @@ The technology pattern and architecture style are read from the existing project
 ## Relationship to Other Skills
 
 - **`kickoff`** — Use for new projects. This skill is the counterpart for existing projects.
-- **`analysis`** — May be invoked scoped to the change request for impact analysis, bug diagnosis, or in assessment mode for a full project audit.
+- **`analysis`** — May be invoked scoped to the change request for impact analysis, bug diagnosis, or in assessment mode for a full project audit. Also generates `PROJECT_CACHE.md` after Assessment.
 - **`specification`** — Invoked for new features on existing projects to produce `SPEC_<Feature>.md`.
 - **`design`** — Invoked only if the change modifies contracts or architecture.
 - **`implementation`** — Always invoked after intake to apply the change.
-- **`testing`** — Always invoked after implementation to validate the change.
-- **`review`** — Always invoked after testing to validate compliance. For refactors, also invoked before implementation.
+- **`testing`** — Always invoked after intake to validate the change.
+- **`review`** — Always invoked after intake to validate compliance. For refactors, also invoked before implementation.
+- **`PROJECT_CACHE.md`** — Read in Pre-Intake Check to skip redundant file scans. Invalidates stale caches (>30 days).

@@ -22,7 +22,7 @@ The framework has two deployment axes:
 - **Technology patterns** (`flutter/`, `dotnet/`, ...): self-contained folders with conventions, agents, and skills for a specific tech stack.
 - **AI platforms** (`platforms/`): instruction templates adapted to each AI assistant's native format.
 
-When starting a new project, run the deploy script to combine a **platform** + **pattern** and copy the result into the target project.
+When starting a new project, run the deploy script to combine a **platform** + **pattern** and copy the result into the target project. Optionally, deploy **git hooks** for automatic version bumping on each commit.
 
 ## Repository Structure
 
@@ -31,6 +31,8 @@ PovoAgent/
 ├── README.md                         <-- This file (framework documentation)
 ├── deploy.ps1                        <-- Deploy script (PowerShell)
 ├── deploy.sh                         <-- Deploy script (Bash)
+├── hooks/
+│   └── pre-commit                    <-- Git hook: auto-version-bump on commit
 ├── templates/
 │   ├── povo.agent.md                 <-- Agent template (copilot/gemini/claude)
 │   └── opencode/
@@ -98,6 +100,7 @@ Each pattern contains:
 .\deploy.ps1 -Platform copilot -Pattern astro -Target C:\Projects\MarketingSite
 .\deploy.ps1 -Platform claude -Pattern dotnet -Target C:\Projects\Api -Force
 .\deploy.ps1 -Platform opencode -Pattern react -Target C:\Projects\MyReactApp
+.\deploy.ps1 -Platform copilot -Pattern dotnet -Target C:\Projects\Api -GitHooks
 ```
 
 ```bash
@@ -110,6 +113,7 @@ Each pattern contains:
 ./deploy.sh -p copilot -t astro -d /path/to/site
 ./deploy.sh -p gemini -t dotnet -d /path/to/project -f
 ./deploy.sh -p opencode -t react -d /path/to/project
+./deploy.sh -p copilot -t dotnet -d /path/to/project -g
 ```
 
 Pattern input validation:
@@ -117,6 +121,31 @@ Pattern input validation:
 - Use one or more valid pattern names.
 - Empty parsed values are rejected in both scripts (for example, `-Pattern ","` or `-t ","`).
 - Single pattern deploy creates `conventions.md`; multi-pattern deploy creates `conventions-{pattern}.md` per pattern.
+
+## Git Hooks (Optional)
+
+The framework includes a `hooks/pre-commit` script that **auto-increments the patch version** in the target project's `VERSION` file on every commit.
+
+**Deploy hooks:**
+
+```powershell
+# PowerShell
+.\deploy.ps1 -Platform copilot -Pattern dotnet -Target C:\Projects\MyApp -GitHooks
+```
+
+```bash
+# Bash
+./deploy.sh -p copilot -t dotnet -d /path/to/project -g
+```
+
+**What happens:**
+
+- Copies `hooks/pre-commit` to `.git/hooks/pre-commit` in the target project (if `.git` exists).
+- Makes it executable (`chmod +x`) on Linux/macOS; Git Bash on Windows handles `.sh` hooks natively.
+- On each `git commit`, the hook reads `VERSION`, bumps the patch number (e.g. `0.1.0` → `0.1.1`), and stages the change.
+- If `VERSION` doesn't exist, it creates one starting at `0.1.0`.
+
+**Interactive mode:** The deploy scripts will ask if you want to deploy hooks when no `-GitHooks` / `-g` flag is provided.
 
 The deploy process:
 
@@ -126,6 +155,7 @@ The deploy process:
 4. Copies the **pattern's conventions** (`conventions.md`) into the target root.
 5. Copies the **pattern's agents and skills** into their platform-specific locations.
 6. Updates **`.gitignore`** in the target to exclude all deployed framework files (uses `# -- PovoAgent BEGIN/END --` markers so re-deploys update the section). If no `.git` repo is detected, a warning is shown.
+7. Optionally deploys **git hooks** (pre-commit auto-version-bump) to `.git/hooks/pre-commit` if the `-GitHooks` / `-g` flag is set or chosen interactively.
 
 ## What Gets Deployed
 

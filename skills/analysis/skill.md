@@ -72,9 +72,10 @@ Perform a holistic audit of an existing project to identify improvement opportun
    - **Flows only** — User flows, data flows, API contracts, cross-slice communication.
 
 #### Step 2 — Gather Context
-1. Read available project documents: `PROJECT_INTAKE.md`, `PROJECT_PLAN.md`, `SPEC_*.md`, Design Document.
-2. Read the active pattern's `conventions.md` for technology-specific standards.
-3. Identify the **architecture style** (Clean Architecture or Vertical Slice Architecture) from project documents.
+1. Read available project documents: `PROJECT_INTAKE.md`, `PROJECT_PLAN.md`, `SPEC_*.md`, Design Document, **`PROJECT_CACHE.md`** (if it exists).
+2. If `PROJECT_CACHE.md` exists and is not stale, use it as the primary source for architecture map, domain map, and file index. This avoids re-scanning files already mapped.
+3. Read the active pattern's `conventions.md` for technology-specific standards.
+4. Identify the **architecture style** (Clean Architecture or Vertical Slice Architecture) from project documents or cache.
 
 #### Step 3 — Architecture Assessment
 Review the codebase for architecture compliance:
@@ -132,6 +133,38 @@ Output: Flow findings table (severity, category, finding, recommendation).
 3. Link each CR back to the Assessment Report in the **Generated Change Requests** table.
 4. CRs follow the Feature workflow (Spec → Implementation → Testing → Review) or Modification workflow depending on whether they add new capability or modify existing behavior.
 
+#### Step 8 — Generate / Update Project Cache
+After the Assessment Report is approved (and optionally after CRs are generated), produce or update `PROJECT_CACHE.md`:
+
+1. **If `PROJECT_CACHE.md` does not exist:** Generate a full cache using the `templates/project-cache.md` template.
+2. **If `PROJECT_CACHE.md` exists:** Update the file with new/revised information. Keep the previous entry in the **Cache Refresh Log** and append a new entry with the current date and changes summary.
+3. **Populate these sections** based on the project's architecture style:
+
+   | Section | Clean Architecture | Vertical Slice Architecture |
+   |---|---|---|
+   | Metadata | Project name, pattern, platform, dates | Same |
+   | Architecture Map → Layer/Slice Overview | Layers + key files per layer | Slices + endpoints + handler + data access per slice |
+   | Architecture Map → Cross-Layer/Slice Contracts | Interfaces between layers | Contracts between slices + type (Event, Mediator, Shared Kernel) |
+   | Architecture Map → Dependency Graph | Text diagram of layer dependencies | (None — slices are independent by design) |
+   | Architecture Map → Shared Kernel | (None — not applicable to CA) | Shared types, enums, utilities across slices |
+   | Domain Map → Aggregate Roots | Root entities + files + invariants | Same (slices own their aggregates) |
+   | Domain Map → Domain Services | Services + files + consumers | Same |
+   | Domain Map → Business Rules Summary | Concise summary of cross-cutting rules | Same |
+   | File Index → Config & Entry Points | Entry point file + config files | Same |
+   | File Index → Key Directories | Directories + descriptions + approx. file counts | Same |
+   | File Index → Test Files | Test projects/dirs + coverage scope + approx. test count | Same |
+   | Key Decisions & Constraints | Architecture decisions + known constraints | Same |
+   | Cache Refresh Log | Append new entry with trigger, assessment ID, changes summary | Same |
+
+4. **Set the stale date:** `Last Updated + 30 days`.
+5. **Record the Assessment ID** in the Metadata section for traceability.
+6. Save `PROJECT_CACHE.md` in the project root (alongside `PROJECT_INTAKE.md`).
+
+**Cache freshness rules:**
+- **Fresh** (Last Updated within 30 days): All skills can rely on the cache and skip redundant file scans.
+- **Stale** (Last Updated > 30 days): The next time any skill reads it, suggest a re-assessment to the user.
+- **Invalidated by change:** When a significant change is completed (new feature, refactor, new slice/layer), update the cache incrementally by appending a refresh log entry and updating affected sections.
+
 ### Mode 2 Inputs
 - Intake stub in `ASSESSMENT_REPORT.md` (metadata filled by `change-intake`).
 - Existing project source code.
@@ -146,6 +179,12 @@ Output: Flow findings table (severity, category, finding, recommendation).
   - Flow Findings (user flows, data flows, API contracts, cross-slice)
   - Prioritized Recommendations (Critical / High / Medium / Low)
   - Generated Change Requests table (if applicable)
+- **Project Cache** (`PROJECT_CACHE.md`) at the project root, containing:
+  - Architecture map (layers or slices, contracts, key files)
+  - Domain map (aggregates, domain services, business rules)
+  - File index (config, entry points, key directories, test files)
+  - Key decisions and constraints
+  - Cache refresh log with full traceability
 
 ### Mode 2 Acceptance Criteria
 - All three dimensions (or the scoped subset) have been systematically reviewed.
@@ -154,6 +193,8 @@ Output: Flow findings table (severity, category, finding, recommendation).
 - The Executive Summary accurately reflects the project's health.
 - The user has reviewed and approved the Assessment Report.
 - Optional: Change Requests are generated for Critical and High findings and linked back to the report.
+- `PROJECT_CACHE.md` is generated (or updated) in the project root with all sections populated.
+- The cache refresh log records the assessment ID and date for traceability.
 
 ## Decoupling Rule
 

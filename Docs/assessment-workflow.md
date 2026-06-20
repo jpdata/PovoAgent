@@ -80,18 +80,19 @@ flowchart TB
 |---|---|
 | Skill | `analysis` (Assessment Mode — Mode 2) |
 | Agent | PovoAgent (main) |
-| Input | `ASSESSMENT_REPORT.md` stub (metadata from `change-intake`) + project source code |
-| Output | `ASSESSMENT_REPORT.md` with all findings filled in |
+| Input | `ASSESSMENT_REPORT.md` stub (metadata from `change-intake`) + `PROJECT_CACHE.md` (if exists) + project source code |
+| Output | `ASSESSMENT_REPORT.md` with all findings filled in + `PROJECT_CACHE.md` generated/updated |
 | Gate | User reviews and approves the Assessment Report |
 
 #### Steps
 
 1. **Confirm Scope** — Full (all dimensions), Architecture only, Technical only, or Flows only.
-2. **Gather Context** — Read `PROJECT_INTAKE.md`, `SPEC_*.md`, Design Document, `conventions.md`.
+2. **Gather Context** — Read `PROJECT_CACHE.md` first (if fresh). Then read `PROJECT_INTAKE.md`, `SPEC_*.md`, Design Document, `conventions.md`.
 3. **Architecture Assessment** — SOLID compliance, layer/slice boundaries, decoupling, design patterns, folder structure.
 4. **Technical Assessment** — Performance, security, maintainability, dependencies, technical debt.
 5. **Flow Assessment** — User flows, data flows, API contracts, cross-slice communication, processes.
 6. **Prioritize & Produce Report** — Classify each finding by severity, write the Executive Summary, fill all sections.
+7. **Generate / Update Cache** — After the report is approved, produce or update `PROJECT_CACHE.md` from the template. Populate architecture map, domain map, file index, key decisions, and refresh log. Set stale date to Last Updated + 30 days.
 
 ### Phase 2 — Review Validation
 
@@ -123,6 +124,104 @@ Each generated `CHANGE_REQUEST.md` follows its own workflow:
 
 - **Feature CRs** → Specification → Implementation → Testing → Review
 - **Modification CRs** → Implementation → Testing → Review
+
+### Phase 4 — Generate / Update Project Cache
+
+| Field | Value |
+|---|---|
+| Skill | `analysis` (Assessment Mode — Mode 2, Step 8) |
+| Agent | PovoAgent (main) |
+| Input | `ASSESSMENT_REPORT.md` + project source code + `templates/project-cache.md` template |
+| Output | `PROJECT_CACHE.md` at project root |
+| Gate | Cache file written with all sections populated; refresh log updated |
+
+This phase runs automatically after the Assessment Report is approved. It produces a structured, machine-readable snapshot of the project that all subsequent skills can read to avoid re-scanning the codebase.
+
+**What gets cached (Clean Architecture):**
+
+| Cache Section | Content |
+|---|---|
+| Metadata | Project name, pattern, platform, architecture style, dates, assessment ID |
+| Architecture Map — Layer Overview | Layers (Presentation, Application, Domain, Infrastructure) + key files per layer |
+| Architecture Map — Cross-Layer Contracts | Interfaces defined in one layer, implemented in another, consumed by a third |
+| Architecture Map — Dependency Graph | Text diagram of layer dependencies |
+| Domain Map | Aggregate roots, domain services, business rules summary |
+| File Index | Config files, entry points, key directories (with file counts), test files |
+| Key Decisions & Constraints | Architecture decisions with rationale, known constraints with mitigations |
+| Cache Refresh Log | Full history: date, trigger (Assessment / Change), assessment ID, changes summary |
+
+**What gets cached (Vertical Slice Architecture):**
+
+| Cache Section | Content |
+|---|---|
+| Metadata | Project name, pattern, platform, architecture style, dates, assessment ID |
+| Architecture Map — Slice Overview | Slices + endpoints + handler + data access per slice |
+| Architecture Map — Cross-Slice Contracts | Contracts between slices + type (Event, Mediator, Shared Kernel) |
+| Architecture Map — Shared Kernel | Shared types, enums, utilities across slices |
+| Domain Map | Aggregate roots, domain services, business rules summary |
+| File Index | Config files, entry points, key directories (with file counts), test files |
+| Key Decisions & Constraints | Architecture decisions with rationale, known constraints with mitigations |
+| Cache Refresh Log | Full history: date, trigger (Assessment / Change), assessment ID, changes summary |
+
+---
+
+## Project Cache Lifecycle
+
+### How Skills Use the Cache
+
+```mermaid
+flowchart TB
+    Start([Skill invoked on<br/>existing project]) --> Check{PROJECT_CACHE.md<br/>exists?}
+    
+    Check --> |No| FullScan[Full scan: read all<br/>docs + explore codebase]
+    Check --> |Yes| Fresh{Last Updated<br/>< 30 days?}
+    
+    Fresh --> |Yes| UseCache[Use cache as primary source:<br/>architecture map, domain map,<br/>file index, key decisions]
+    Fresh --> |No| Stale[Warn user: cache is stale.<br/>Suggest re-assessment.]
+    
+    UseCache --> Validate[Validate cache against<br/>actual files if needed]
+    Validate --> Proceed[Proceed with task<br/>using cached knowledge]
+    
+    Stale --> UserChoice{User wants<br/>re-assessment?}
+    UserChoice --> |Yes| FullScan
+    UserChoice --> |No| UseCache
+    
+    FullScan --> Proceed
+
+    style Start fill:#4a90d9,color:#fff
+    style Check fill:#e87722,color:#fff
+    style Fresh fill:#e87722,color:#fff
+    style UseCache fill:#50c878,color:#fff
+    style Stale fill:#f4a460,color:#fff
+    style FullScan fill:#e87722,color:#fff
+    style Proceed fill:#4a90d9,color:#fff
+```
+
+### Cache Generation Triggers
+
+| Trigger | What happens | Skill responsible |
+|---|---|---|
+| **First Assessment** | Full `PROJECT_CACHE.md` generated. All sections populated. | `analysis` (Mode 2, Step 8) |
+| **Re-Assessment** | Cache updated with new findings. Previous refresh log entry preserved, new entry appended. | `analysis` (Mode 2, Step 8) |
+| **Major change completed** (new feature, refactor, new slice/layer) | Incremental update: affected sections refreshed, refresh log appended. | `analysis` (Mode 2, Step 8) — invoked explicitly by user: "Update the project cache after this change." |
+
+### Cache Freshness Rules
+
+| State | Condition | Behavior |
+|---|---|---|
+| **Fresh** | Last Updated ≤ 30 days ago | All skills read cache first. Skip redundant file scans. |
+| **Stale** | Last Updated > 30 days ago | Next skill that reads it warns the user: "The project cache is over 30 days old. Consider re-assessing." User can proceed with stale cache or trigger re-assessment. |
+| **Invalidated** | Cache sections contradict actual files | Skills validate key cache claims (file existence, layer structure) before relying on them. If discrepancy found, treat cache as unreliable and fall back to full scan. |
+
+### Impact on Context Usage
+
+| Without Cache | With Cache |
+|---|---|
+| Every skill re-reads `PROJECT_INTAKE.md`, design docs, conventions | Read once via cache; subsequent skills read cache only |
+| Every skill explores directory structure via `list_dir` / `file_search` | File Index section provides directory map with file counts |
+| Architecture style, layer boundaries re-discovered each time | Architecture Map section provides authoritative reference |
+| Domain model re-extracted from code each time | Domain Map section provides aggregate roots, services, rules |
+| ~8–12 tool calls per skill just for context gathering | ~1–2 tool calls (read cache + validate if needed) |
 
 ---
 
@@ -232,12 +331,13 @@ The assessment reads the active pattern's `conventions.md` to understand what is
 
 | Skill | Role in Assessment |
 |---|---|
-| `change-intake` | Entry point. Produces `ASSESSMENT_REPORT.md` stub with metadata. Also invoked per finding to generate individual CRs. |
-| `analysis` (Mode 2) | Core assessment execution. Reviews architecture, technical, and flow dimensions. |
+| `change-intake` | Entry point. Produces `ASSESSMENT_REPORT.md` stub with metadata. Also invoked per finding to generate individual CRs. Reads `PROJECT_CACHE.md` in Pre-Intake Check to skip redundant context gathering. |
+| `analysis` (Mode 2) | Core assessment execution. Reviews architecture, technical, and flow dimensions. Generates/updates `PROJECT_CACHE.md` in Step 8. |
 | `review` | Validates findings against conventions to eliminate false positives. |
 | `specification` | Invoked if a generated CR is a Feature type (new capability). |
 | `implementation` | Invoked per generated CR to apply the fix or build the feature. |
 | `testing` | Invoked per generated CR to validate the fix or feature. |
+| `PROJECT_CACHE.md` | **Cross-cutting artifact.** Read by all evolutionary skills (`change-intake`, `implementation`, `testing`, `review`) to avoid re-scanning. Generated by `analysis` Mode 2. Invalidated when stale (>30 days) or when code changes contradict cached data. |
 
 ---
 
@@ -246,6 +346,7 @@ The assessment reads the active pattern's `conventions.md` to understand what is
 | Artifact | When | Description |
 |---|---|---|
 | `ASSESSMENT_REPORT.md` | End of Phase 1 | Full report with Executive Summary, findings across all dimensions, prioritized recommendations. |
+| `PROJECT_CACHE.md` | End of Phase 4 | Structured snapshot of architecture map, domain map, file index, key decisions, and refresh log. |
 | `CHANGE_REQUEST.md` (×N) | Phase 3 (optional) | One per selected finding. Linked back to the Assessment Report. |
 | Review validation notes | End of Phase 2 | Confirmation that all findings are accurate and not false positives. |
 
