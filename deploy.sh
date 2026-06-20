@@ -184,12 +184,19 @@ copy_tree_safe() {
     local source="$1"
     local destination="$2"
     local label="$3"
+    local exclude="${4:-}"
     local count=0
 
     if [[ ! -d "$source" ]]; then
         echo -e "  ${GRAY}[SKIP] ${label} — source not found: ${source}${NC}"
         return
     fi
+
+    local find_args=("$source" -type f)
+    if [[ -n "$exclude" ]]; then
+        find_args+=(-not -name "$exclude")
+    fi
+    find_args+=(-print0)
 
     while IFS= read -r -d '' file; do
         local rel_path="${file#"$source"/}"
@@ -205,7 +212,7 @@ copy_tree_safe() {
         mkdir -p "$dest_dir"
         cp "$file" "$dest_file"
         count=$((count + 1))
-    done < <(find "$source" -type f -print0)
+    done < <(find "${find_args[@]}")
 
     TOTAL_FILES=$((TOTAL_FILES + count))
 }
@@ -245,7 +252,29 @@ echo ""
 # 1. Platform instructions template
 echo -e "${CYAN}[1/7] Platform instructions (${PLATFORM})...${NC}"
 PLATFORM_SOURCE="$PLATFORMS_DIR/$PLATFORM"
-copy_tree_safe "$PLATFORM_SOURCE" "$TARGET" "Platform template"
+
+if [[ "$PLATFORM" == "opencode" ]]; then
+    # Copy everything EXCEPT opencode.json to let the Go Provider extension handle models
+    copy_tree_safe "$PLATFORM_SOURCE" "$TARGET" "Platform template" "opencode.json"
+
+    echo ""
+    read -rp "Deploy opencode.json (MCP server config)? Use only if you don't have a provider configured (y/N): " deploy_config
+    if [[ "$deploy_config" =~ ^[Yy]$ ]]; then
+        CONFIG_SOURCE="$PLATFORM_SOURCE/opencode.json"
+        CONFIG_DEST="$TARGET/opencode.json"
+        if [[ -f "$CONFIG_DEST" ]] && [[ "$FORCE" != true ]]; then
+            echo -e "  ${YELLOW}[EXISTS] opencode.json — use -f to overwrite${NC}"
+        else
+            cp "$CONFIG_SOURCE" "$CONFIG_DEST"
+            TOTAL_FILES=$((TOTAL_FILES + 1))
+            echo -e "  ${GREEN}[OK] opencode.json deployed${NC}"
+        fi
+    else
+        echo -e "  ${GRAY}[SKIP] opencode.json — using extension provider for models${NC}"
+    fi
+else
+    copy_tree_safe "$PLATFORM_SOURCE" "$TARGET" "Platform template"
+fi
 
 # 2. Agent template
 echo -e "${CYAN}[2/7] Agent template...${NC}"

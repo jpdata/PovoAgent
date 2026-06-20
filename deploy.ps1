@@ -149,14 +149,15 @@ function Copy-TreeSafe {
     param(
         [string]$Source,
         [string]$Destination,
-        [string]$Label
+        [string]$Label,
+        [string[]]$Exclude = @()
     )
     if (-not (Test-Path $Source)) {
         Write-Host "  [SKIP] $Label - source not found: $Source" -ForegroundColor DarkGray
         return 0
     }
     $count = 0
-    $items = Get-ChildItem -Path $Source -Recurse -File
+    $items = Get-ChildItem -Path $Source -Recurse -File | Where-Object { $_.Name -notin $Exclude }
     foreach ($item in $items) {
         $relativePath = $item.FullName.Substring($Source.Length).TrimStart('\', '/')
         $destFile = Join-Path $Destination $relativePath
@@ -290,7 +291,28 @@ $totalFiles = 0
 # 1. Platform instructions template
 Write-Host "[1/7] Platform instructions ($Platform)..." -ForegroundColor Cyan
 $platformSource = Join-Path $PlatformsDir $Platform
-$totalFiles += Copy-TreeSafe -Source $platformSource -Destination $Target -Label "Platform template"
+
+if ($Platform -eq "opencode") {
+    # Copy everything EXCEPT opencode.json to let the Go Provider extension handle models
+    $totalFiles += Copy-TreeSafe -Source $platformSource -Destination $Target -Label "Platform template" -Exclude @("opencode.json")
+
+    $deployConfig = Read-Host "`nDeploy opencode.json (MCP server config)? Use only if you don't have a provider configured (y/N)"
+    if ($deployConfig -match '^[Yy]$') {
+        $configSource = Join-Path $platformSource "opencode.json"
+        $configDest   = Join-Path $Target "opencode.json"
+        if ((Test-Path $configDest) -and (-not $Force)) {
+            Write-Host "  [EXISTS] opencode.json - use -Force to overwrite" -ForegroundColor Yellow
+        } else {
+            Copy-Item -Path $configSource -Destination $configDest -Force
+            $totalFiles++
+            Write-Host "  [OK] opencode.json deployed" -ForegroundColor Green
+        }
+    } else {
+        Write-Host "  [SKIP] opencode.json - using extension provider for models" -ForegroundColor DarkGray
+    }
+} else {
+    $totalFiles += Copy-TreeSafe -Source $platformSource -Destination $Target -Label "Platform template"
+}
 
 # 2. Agent template
 Write-Host "[2/7] Agent template..." -ForegroundColor Cyan
