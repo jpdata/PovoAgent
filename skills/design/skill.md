@@ -9,8 +9,15 @@ Define decoupled architecture, UI/UX proposals, data modeling, and APIs, followi
 
 ## Workflow
 
+### Pre-Step — Read Project Cache
+1. If `PROJECT_CACHE.md` exists in the project root, read it first to obtain the architecture map, file index, and domain map.
+2. **If fresh** (≤ 30 days old): Use the cache as the primary source for architecture context — layer boundaries, cross-layer contracts, key directories. This avoids re-scanning the entire project.
+3. **If stale** (> 30 days old): Note potential drift but continue using the cache. Inform the user:
+   > "The project cache is stale. Consider re-assessing the project to refresh it."
+4. **If absent**: Proceed without the cache. The agent will scan the project structure directly.
+
 ### Step 0 — Confirm Architecture Style
-1. Read the Analysis Plan document to identify the architecture style.
+1. Read the Analysis Plan document to identify the architecture style. Cross-reference with the Architecture Map in `PROJECT_CACHE.md` if available.
 2. If the style is not explicitly set, **ask the user** to choose:
    - **Clean Architecture** (CA) — horizontal layers.
    - **Vertical Slice Architecture** (VSA) — feature-vertical organization.

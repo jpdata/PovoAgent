@@ -9,6 +9,11 @@ Perform a structured code review that validates architecture compliance, SOLID p
 
 ## Workflow
 
+### Pre-Step — Read Project Cache
+1. If `PROJECT_CACHE.md` exists, read it to understand the project's architecture, layer/slice boundaries, and key files — this focuses the review on the correct structure.
+2. **If fresh**: Use the Architecture Map to validate that the implementation matches the documented structure. Use the Symbol Index to verify contracts and interfaces are respected.
+3. **If stale or absent**: Proceed without it; review against the Design Document and conventions only.
+
 ### Step 0 — Confirm Architecture Style
 Read the Design Document to identify whether the project uses Clean Architecture or Vertical Slice Architecture. All review criteria follow the relevant path below.
 

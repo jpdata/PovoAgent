@@ -53,6 +53,18 @@
 - Severity levels: Critical → Generate CR + fix now; High → Generate CR + current cycle; Medium → optional CR + next cycle; Low → document only.
 - Assessment is divergent (broad discovery) then convergent (targeted CRs), unlike other workflows that start with a specific change.
 
+## Project Cache System (2026-07-02)
+
+- `PROJECT_CACHE.md` is a machine-generated, machine-read persistent snapshot of the target project's architecture, domain map, file layout, and symbol index.
+- `templates/project-cache.md` is the core schema template, now with **Symbol Index** and **Import/Export Map** sections to eliminate grep-based symbol location.
+- `templates/povo.agent.md` has a new **Project Cache** section defining lifecycle, freshness rules, and incremental update rules.
+- **All lifecycle skills** (design, implementation, testing, review, specification) now have a **Pre-Step** that reads `PROJECT_CACHE.md` before scanning the codebase.
+- `change-intake` already reads the cache (Pre-Intake Check). `analysis` already generates it (Mode 2, Step 8).
+- All four platform configs (Copilot, Claude, Gemini, OpenCode) now reference `PROJECT_CACHE.md`.
+- `opencode.json` includes `PROJECT_CACHE.md` in its instructions list.
+- New documentation: `Docs/project-cache-system.md` describes the full system, lifecycle, freshness rules, and migration guide.
+- Implementation repurposed the PROJECT_CACHE.md work originally done in parkinson_apps.
+
 ## Project Cache (2026-06-20)
 
 - `templates/project-cache.md` defines the `PROJECT_CACHE.md` structure: Metadata, Architecture Map (CA layers or VSA slices + contracts), Domain Map, File Index, Key Decisions & Constraints, Cache Refresh Log.

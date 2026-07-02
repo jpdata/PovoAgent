@@ -82,6 +82,21 @@
 - Why: the framework already included a pre-commit hook for self-versioning, but target projects had no way to get it. This closes the gap by deploying the hook as an optional step during project setup.
 - Affected files: `deploy.ps1`, `deploy.sh`, `README.md`, `Docs/framework-ai-enhancement-phase.md`.
 
+### 2026-07-02 - Project Cache System upgrade: Symbol Index, Import/Export Map, and full lifecycle integration
+
+- Enhanced `templates/project-cache.md` with new **Symbol Index** section (Classes/Types, Services/Providers, Contracts/Interfaces, Route/Endpoint Index) to eliminate grep-based symbol location across the codebase — agents can now find any symbol in one cache read instead of 5–15 grep calls.
+- Enhanced `templates/project-cache.md` with new **Import/Export Map** section documenting package-level and cross-module dependencies.
+- Added staleness summary header to `templates/project-cache.md` for instant freshness detection without scanning the metadata table.
+- Updated `templates/povo.agent.md` with dedicated **Project Cache** section defining lifecycle (Creation → Read → Update → Refresh → Stale detection), freshness rules (Fresh/Stale/Missing), and incremental update rules after significant changes.
+- Added cache reading as **Step 0** in both New Project and Existing Project workflows in `templates/povo.agent.md`.
+- Added **Pre-Step — Read Project Cache** to all lifecycle skills that interact with existing projects: `design`, `implementation`, `testing`, `review`, `specification`. Each skill now reads the cache first before scanning the codebase.
+- Updated all four platform instruction files (`copilot`, `claude`, `gemini`, `opencode`) with a **Project Cache** section explaining the cache lifecycle and usage rules.
+- Updated `platforms/opencode/opencode.json` to include `PROJECT_CACHE.md` in the instructions list, making it available to OpenCode agents as context.
+- Created `Docs/project-cache-system.md` — comprehensive documentation covering the full cache system, architecture diagram, lifecycle, freshness rules, impact analysis, migration guide, and design decisions.
+- Updated `.github/copilot-memory.md` with the Project Cache System entry.
+- Why: The initial cache (2026-06-20) was limited to architecture assessment. This upgrade turns the cache into a universal context source that every skill reads as a pre-step, reducing codebase scanning from 5–15 tool calls per interaction to 1–2. The Symbol Index alone eliminates grepping for every class, interface, service, and route the agent needs to locate.
+- Affected files: `templates/project-cache.md`, `templates/povo.agent.md`, `skills/analysis/SKILL.md`, `skills/change-intake/SKILL.md`, `skills/design/SKILL.md`, `skills/implementation/SKILL.md`, `skills/testing/SKILL.md`, `skills/review/SKILL.md`, `skills/specification/SKILL.md`, `platforms/copilot/.github/copilot-instructions.md`, `platforms/claude/CLAUDE.md`, `platforms/gemini/.gemini/styleguide.md`, `platforms/opencode/AGENTS.md`, `platforms/opencode/opencode.json`, `Docs/project-cache-system.md`, `Docs/framework-ai-enhancement-phase.md`, `.github/copilot-memory.md`.
+
 ### 2026-04-25 - Enhancement phase introduced
 
 - Added enhancement-phase rules to `.github/copilot-instructions.md`.

@@ -87,6 +87,42 @@ This agent delegates specialized work to pattern-specific sub-agents:
 - **feature** - Create a feature end-to-end across all layers.
 - **testing** - Technology-specific test generation and validation.
 
+## Project Cache
+
+The **Project Cache** (`PROJECT_CACHE.md`) is a machine-generated file that stores a structured snapshot of the target project's architecture, domain model, file layout, and symbol index. It exists to eliminate redundant codebase scanning on every interaction.
+
+### Cache Lifecycle
+
+| Stage | When | Who | Action |
+|---|---|---|---|
+| **Creation** | First Assessment (Mode 2 of `analysis`) | `analysis` skill | Generates full `PROJECT_CACHE.md` from `templates/project-cache.md` |
+| **Read** | Every Existing Project workflow start | All skills that need code context | Read cache to get architecture map, file index, symbol locations |
+| **Update (incremental)** | After a significant change (feature, refactor, new slice/layer) | Each completing workflow | Append refresh log entry, update affected sections |
+| **Refresh (full)** | Re-Assessment when stale (>30 days) | `analysis` skill | Full re-generation, previous entries preserved in log |
+| **Stale detection** | Before any cache read | The reading skill | If `Stale After` date has passed, suggest re-assessment |
+
+### Cache Freshness Rules
+
+1. **Fresh** (last updated ≤ 30 days): All skills rely on the cache and skip redundant file scans. Use the Symbol Index to locate specific files instead of grepping the entire codebase.
+2. **Stale** (last updated > 30 days): Before using the cache, ask the user:
+   > "The project cache is over 30 days old. Would you like me to re-assess the project first to refresh it?"
+   If the user declines, use the stale cache as-is — the symbol index and architecture map remain useful despite staleness.
+3. **No cache**: If `PROJECT_CACHE.md` does not exist, the agent should proceed without it and, after completing the task, suggest generating one:
+   > "A project cache doesn't exist yet. Shall I generate one so future interactions are faster?"
+
+### How Skills Use the Cache
+
+Every skill that needs to examine the codebase (whether to find files, understand architecture, or locate symbols) must:
+
+1. **Check** if `PROJECT_CACHE.md` exists.
+2. **If fresh**, use the Architecture Map, Domain Map, File Index, and Symbol Index directly instead of scanning the project tree or grepping for symbols. This saves 5–15 tool calls per interaction.
+3. **If stale but available**, use it but note potential drift.
+4. **If absent**, consider generating it after the task.
+
+### When to Update the Cache
+
+After completing a **significant change** (new feature, modification that adds files or types, refactor that restructures code, new slice or layer), append a new entry to the **Cache Refresh Log** and update the **Symbol Index** and **File Index** sections with the new or changed symbols and files. The `analysis` skill handles full cache generation; other skills perform incremental updates only.
+
 ## Workflow
 
 ### New Project
@@ -103,6 +139,7 @@ This agent delegates specialized work to pattern-specific sub-agents:
 
 ### Existing Project (feature, change, or bug fix)
 
+0. **Agent reads `PROJECT_CACHE.md`** (if it exists and is fresh) to get the architecture map, file index, and symbol index — avoiding a full codebase scan. If stale, offers a re-assessment. If absent, proceeds without and offers to generate one after.
 1. Agent invokes the **change-intake** skill to determine the change type and produce `CHANGE_REQUEST.md` or `BUG_REPORT.md`.
 2. Agent routes to the appropriate lightweight workflow based on change type:
    - **New Feature:** `specification` → `implementation` → `testing` → `review`
@@ -110,7 +147,10 @@ This agent delegates specialized work to pattern-specific sub-agents:
    - **Bug Fix:** Diagnosis (`analysis` scoped) → `implementation` → `testing` → `review`
    - **Refactor:** Pre-`review` → `implementation` → `testing` → Post-`review`
 3. Agent may invoke `design` if the change modifies contracts or architecture.
-4. Agent updates milestones in `PROJECT_PLAN.md` (if present) or in the change document itself.
+4. **After completing the change**, agent updates `PROJECT_CACHE.md` incrementally:
+   - Appends a new entry to the **Cache Refresh Log** with the current date and change summary.
+   - Updates the **Symbol Index** and **File Index** with any new or changed files and symbols.
+5. Agent updates milestones in `PROJECT_PLAN.md` (if present) or in the change document itself.
 
 See `Docs/evolutionary-lifecycle.md` for the full workflow documentation.
 

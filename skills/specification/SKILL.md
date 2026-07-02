@@ -17,6 +17,12 @@ Transform the Design Document into a set of formal **Specification Documents** �
 
 ## Workflow
 
+### Pre-Step — Read Project Cache
+1. If `PROJECT_CACHE.md` exists, read it to understand the project's domain map, existing contracts, and aggregate roots — this ensures new specifications align with existing domain boundaries.
+2. **If fresh**: Use the Domain Map (aggregate roots, domain services) and the Import/Export Map (cross-module contracts) to write specs that respect existing boundaries.
+3. **If stale or absent**: Proceed without it; rely on the Design Document and Analysis Plan.
+
+### Step 1 — Read Design Document
 1. Read the Design Document to identify the architecture style (Clean Architecture or Vertical Slice Architecture).
 2. Identify all features, use cases, and contracts that require a specification.
 3. For each identified unit, write one Specification Document following the structure below.

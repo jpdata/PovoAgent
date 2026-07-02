@@ -9,6 +9,11 @@ Generate and execute test plans for each layer: presentation, business logic, an
 
 ## Workflow
 
+### Pre-Step — Read Project Cache
+1. If `PROJECT_CACHE.md` exists, read it to locate test files, test directories, and the architecture map — this tells you where existing tests live and how the project is organized for test structuring.
+2. **If fresh**: Use the File Index (Test Files section) to find existing tests directly. Use the Symbol Index to find which classes need test coverage.
+3. **If stale or absent**: Proceed without it; scan the project structure manually.
+
 ### Step 0 — Confirm Architecture Style
 Read the Design Document to identify the architecture style. All test organization follows the style below.
 

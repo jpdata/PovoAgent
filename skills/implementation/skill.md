@@ -9,6 +9,12 @@ Develop decoupled code for front and back, applying patterns such as MVVM or Cle
 
 ## Workflow
 
+### Pre-Step — Read Project Cache
+1. If `PROJECT_CACHE.md` exists, read it to get the file index, symbol index, and architecture map — this tells you exactly where each layer or slice lives and which files contain which symbols.
+2. **If fresh**: Use the File Index to locate files directly instead of scanning directories. Use the Symbol Index to find where classes, interfaces, and services are defined.
+3. **If stale**: Use it but note potential drift. Suggest a re-assessment after the task.
+4. **If absent**: Proceed without it.
+
 ### Step 0 — Confirm Architecture Style
 Read the Design Document to identify whether the project uses Clean Architecture or Vertical Slice Architecture. All subsequent steps follow the relevant path below.
 
