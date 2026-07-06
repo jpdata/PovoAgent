@@ -1,0 +1,58 @@
+#!/usr/bin/env bash
+# ──────────────────────────────────────────────────────────────────────────────
+# Git pre-commit hook — Flutter-specific: Auto-increment patch version in
+# VERSION file and sync the version into pubspec.yaml.
+#
+# Each commit bumps 0.0.1 (e.g., 0.1.0 → 0.1.1 → 0.1.2 …) in VERSION and
+# updates pubspec.yaml's `version:` field with the same semantic version while
+# preserving the build number (+N suffix).
+# ──────────────────────────────────────────────────────────────────────────────
+
+set -euo pipefail
+
+GIT_ROOT="$(git rev-parse --show-toplevel)"
+VERSION_FILE="$GIT_ROOT/VERSION"
+PUBSPEC_FILE="$GIT_ROOT/pubspec.yaml"
+
+# ── Read or create VERSION ──────────────────────────────────────────────────
+if [ ! -f "$VERSION_FILE" ]; then
+    echo "0.1.0" > "$VERSION_FILE"
+fi
+
+CURRENT=$(head -1 "$VERSION_FILE" | tr -d '[:space:]')
+
+IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+PATCH=$((PATCH + 1))
+NEW_VERSION="${MAJOR}.${MINOR}.${PATCH}"
+
+echo "$NEW_VERSION" > "$VERSION_FILE"
+git add "$VERSION_FILE"
+echo "VERSION bumped: ${CURRENT} → ${NEW_VERSION}"
+
+# ── Sync version to pubspec.yaml ────────────────────────────────────────────
+if [ -f "$PUBSPEC_FILE" ]; then
+    # Extract the current version: find 'version: X.Y.Z[+N]' and capture the build suffix
+    CURRENT_PUBSPEC_VERSION=$(grep -E '^version:\s+' "$PUBSPEC_FILE" | sed -E 's/^version:\s*//' | tr -d '[:space:]')
+
+    if [ -n "$CURRENT_PUBSPEC_VERSION" ]; then
+        # Preserve build number (+N) if present; replace semantic part only
+        BUILD_NUMBER=""
+        if [[ "$CURRENT_PUBSPEC_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+\+([0-9]+)$ ]]; then
+            BUILD_NUMBER="${BASH_REMATCH[1]}"
+            NEW_PUBSPEC_VERSION="${NEW_VERSION}+${BUILD_NUMBER}"
+        else
+            NEW_PUBSPEC_VERSION="$NEW_VERSION"
+        fi
+
+        # Replace the version line in pubspec.yaml
+        sed -i.bak "s/^version:\s*.*/version: ${NEW_PUBSPEC_VERSION}/" "$PUBSPEC_FILE"
+        rm -f "${PUBSPEC_FILE}.bak" 2>/dev/null || true
+
+        git add "$PUBSPEC_FILE"
+        echo "pubspec.yaml version synced: ${CURRENT_PUBSPEC_VERSION} → ${NEW_PUBSPEC_VERSION}"
+    else
+        echo "WARNING: No 'version:' field found in pubspec.yaml; pubspec.yaml was NOT updated." >&2
+    fi
+else
+    echo "WARNING: pubspec.yaml not found at ${PUBSPEC_FILE}; no version sync performed." >&2
+fi

@@ -83,6 +83,14 @@
 - Interactive mode asks "Deploy git hooks (pre-commit auto-version-bump)? (y/N)" when flag is not provided.
 - `README.md` documents the hook with usage examples, behavior description, and updated deploy process.
 
+## Flutter Hook System (2026-07-06)
+
+- New `hooks/pre-commit-flutter` hook that bumps `VERSION` AND syncs `pubspec.yaml` version field, preserving build number (`+N`).
+- `deploy.ps1` and `deploy.sh` now auto-select the hook: if Flutter is among the selected patterns → `pre-commit-flutter`, otherwise → generic `pre-commit`.
+- Multi-pattern deploys including Flutter use the Flutter hook (harmless for non-Flutter patterns — warns if `pubspec.yaml` missing).
+- Summary output shows which hook type was deployed.
+- Full documentation in `Docs/flutter-hook-system.md`.
+
 ## Carry-Over
 
 - None.

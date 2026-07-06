@@ -453,9 +453,14 @@ if (Test-Path $gitignorePath) {
 # 7. Git hooks (optional)
 Write-Host "[7/7] Git hooks..." -ForegroundColor Cyan
 $hooksSource = Join-Path $ScriptRoot "hooks"
-$preCommitSource = Join-Path $hooksSource "pre-commit"
+
+# Flutter pattern gets a Flutter-specific hook that syncs VERSION → pubspec.yaml
+$hasFlutter = $Patterns -contains "flutter"
+$hookName = if ($hasFlutter) { "pre-commit-flutter" } else { "pre-commit" }
+$hookSource = Join-Path $hooksSource $hookName
+
 if ($GitHooks) {
-    if (Test-Path $preCommitSource) {
+    if (Test-Path $hookSource) {
         $gitDir = Join-Path $Target ".git"
         $hooksDestDir = Join-Path $gitDir "hooks"
         $preCommitDest = Join-Path $hooksDestDir "pre-commit"
@@ -467,9 +472,13 @@ if ($GitHooks) {
         if ((Test-Path $preCommitDest) -and (-not $Force)) {
             Write-Host "  [EXISTS] pre-commit - use -Force to overwrite" -ForegroundColor Yellow
         } else {
-            Copy-Item -Path $preCommitSource -Destination $preCommitDest -Force
+            Copy-Item -Path $hookSource -Destination $preCommitDest -Force
             $totalFiles++
-            Write-Host "  [DEPLOYED] pre-commit hook (auto-version-bump on commit)" -ForegroundColor White
+            if ($hasFlutter) {
+                Write-Host "  [DEPLOYED] Flutter pre-commit hook (bumps VERSION + pubspec.yaml on commit)" -ForegroundColor White
+            } else {
+                Write-Host "  [DEPLOYED] pre-commit hook (auto-version-bump on commit)" -ForegroundColor White
+            }
 
             # Make executable on Unix; on Windows, Git Bash handles .sh naturally
             if ($IsLinux -or $IsMacOS) {
@@ -477,7 +486,7 @@ if ($GitHooks) {
             }
         }
     } else {
-        Write-Host "  [SKIP] hooks/pre-commit not found in framework" -ForegroundColor DarkGray
+        Write-Host "  [SKIP] $hookName not found in framework" -ForegroundColor DarkGray
     }
 } else {
     Write-Host "  [SKIP] Git hooks not selected (use -GitHooks to enable)" -ForegroundColor DarkGray
@@ -487,8 +496,9 @@ if ($GitHooks) {
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Green
 Write-Host "  Deploy complete - $totalFiles file(s) copied." -ForegroundColor Green
-if ($GitHooks -and (Test-Path $preCommitDest)) {
-    Write-Host "  Git hooks  : deployed (.git/hooks/pre-commit)" -ForegroundColor White
+if ($GitHooks -and (Test-Path (Join-Path (Join-Path $Target ".git") "hooks\pre-commit"))) {
+    $hookType = if ($hasFlutter) { "Flutter (VERSION + pubspec.yaml)" } else { "generic (VERSION only)" }
+    Write-Host "  Git hooks  : deployed (.git/hooks/pre-commit) — $hookType" -ForegroundColor White
 }
 Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Green
 Write-Host ""

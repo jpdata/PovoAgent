@@ -430,9 +430,18 @@ fi
 # 7. Git hooks (optional)
 echo -e "${CYAN}[7/7] Git hooks...${NC}"
 HOOKS_SOURCE="$SCRIPT_DIR/hooks"
-PRE_COMMIT_SOURCE="$HOOKS_SOURCE/pre-commit"
+
+# Flutter pattern gets a Flutter-specific hook that syncs VERSION → pubspec.yaml
+HAS_FLUTTER=false
+for pat in "${PATTERNS[@]}"; do
+    [[ "$pat" == "flutter" ]] && HAS_FLUTTER=true
+done
+HOOK_NAME="pre-commit"
+[[ "$HAS_FLUTTER" == true ]] && HOOK_NAME="pre-commit-flutter"
+HOOK_SOURCE="$HOOKS_SOURCE/$HOOK_NAME"
+
 if [[ "$GIT_HOOKS" == true ]]; then
-    if [[ -f "$PRE_COMMIT_SOURCE" ]]; then
+    if [[ -f "$HOOK_SOURCE" ]]; then
         HOOKS_DEST_DIR="$TARGET/.git/hooks"
         PRE_COMMIT_DEST="$HOOKS_DEST_DIR/pre-commit"
 
@@ -443,13 +452,17 @@ if [[ "$GIT_HOOKS" == true ]]; then
         if [[ -f "$PRE_COMMIT_DEST" ]] && [[ "$FORCE" != true ]]; then
             echo -e "  ${YELLOW}[EXISTS] pre-commit — use -f to overwrite${NC}"
         else
-            cp "$PRE_COMMIT_SOURCE" "$PRE_COMMIT_DEST"
+            cp "$HOOK_SOURCE" "$PRE_COMMIT_DEST"
             chmod +x "$PRE_COMMIT_DEST" 2>/dev/null || true
             TOTAL_FILES=$((TOTAL_FILES + 1))
-            echo -e "  ${WHITE}[DEPLOYED] pre-commit hook (auto-version-bump on commit)${NC}"
+            if [[ "$HAS_FLUTTER" == true ]]; then
+                echo -e "  ${WHITE}[DEPLOYED] Flutter pre-commit hook (bumps VERSION + pubspec.yaml on commit)${NC}"
+            else
+                echo -e "  ${WHITE}[DEPLOYED] pre-commit hook (auto-version-bump on commit)${NC}"
+            fi
         fi
     else
-        echo -e "  ${GRAY}[SKIP] hooks/pre-commit not found in framework${NC}"
+        echo -e "  ${GRAY}[SKIP] ${HOOK_NAME} not found in framework${NC}"
     fi
 else
     echo -e "  ${GRAY}[SKIP] Git hooks not selected (use -g to enable)${NC}"
@@ -460,7 +473,11 @@ echo ""
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  Deploy complete — ${TOTAL_FILES} file(s) copied.${NC}"
 if [[ "$GIT_HOOKS" == true ]] && [[ -f "$TARGET/.git/hooks/pre-commit" ]]; then
-    echo -e "${WHITE}  Git hooks  : deployed (.git/hooks/pre-commit)${NC}"
+    if [[ "$HAS_FLUTTER" == true ]]; then
+        echo -e "${WHITE}  Git hooks  : deployed (.git/hooks/pre-commit) — Flutter (VERSION + pubspec.yaml)${NC}"
+    else
+        echo -e "${WHITE}  Git hooks  : deployed (.git/hooks/pre-commit) — generic (VERSION only)${NC}"
+    fi
 fi
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
 echo ""
