@@ -14,6 +14,17 @@ GIT_ROOT="$(git rev-parse --show-toplevel)"
 VERSION_FILE="$GIT_ROOT/VERSION"
 PUBSPEC_FILE="$GIT_ROOT/pubspec.yaml"
 
+# ── Skip if files have unstaged changes ─────────────────────────────────────
+if ! git diff --quiet -- "$VERSION_FILE" 2>/dev/null; then
+    echo "VERSION has unstaged changes; skipping auto-bump."
+    exit 0
+fi
+
+if [ -f "$PUBSPEC_FILE" ] && ! git diff --quiet -- "$PUBSPEC_FILE" 2>/dev/null; then
+    echo "pubspec.yaml has unstaged changes; skipping auto-bump."
+    exit 0
+fi
+
 # ── Read or create VERSION ──────────────────────────────────────────────────
 if [ ! -f "$VERSION_FILE" ]; then
     echo "0.1.0" > "$VERSION_FILE"

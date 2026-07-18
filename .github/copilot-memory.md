@@ -91,6 +91,15 @@
 - Summary output shows which hook type was deployed.
 - Full documentation in `Docs/flutter-hook-system.md`.
 
+## Flutter MSIX Installer Skill (2026-07-18)
+
+- New pattern-specific skill `flutter/skills/flutter-msix-installer/SKILL.md` for creating self-contained MSIX installers for Flutter Windows desktop apps.
+- Ported from the NpGmao project where it was built and tested for real-world Windows distribution.
+- Covers: prerequisites, msix_config setup in pubspec.yaml, build & package via `dart run msix:create`, DLL verification (Flutter engine + plugins + VC++ Redist), beta distribution with certificate, storage path guidance (`path_provider` vs `Platform.resolvedExecutable`), and sign-off checklist.
+- Requires the project to have a working `flutter build windows --release`, a `.pfx` certificate, and a logo image.
+- msix v3.18.0+ is critical for automatic VC++ Redist DLL bundling.
+- Documentation in `Docs/flutter-msix-installer.md`.
+
 ## Carry-Over
 
 - None.

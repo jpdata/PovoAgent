@@ -6,6 +6,12 @@
 
 VERSION_FILE="$(git rev-parse --show-toplevel)/VERSION"
 
+# Skip bump if VERSION has unstaged changes (user-modified)
+if ! git diff --quiet -- "$VERSION_FILE" 2>/dev/null; then
+    echo "VERSION has unstaged changes; skipping auto-bump."
+    exit 0
+fi
+
 if [ ! -f "$VERSION_FILE" ]; then
     echo "0.1.0" > "$VERSION_FILE"
 fi

@@ -97,6 +97,13 @@
 - Why: The initial cache (2026-06-20) was limited to architecture assessment. This upgrade turns the cache into a universal context source that every skill reads as a pre-step, reducing codebase scanning from 5–15 tool calls per interaction to 1–2. The Symbol Index alone eliminates grepping for every class, interface, service, and route the agent needs to locate.
 - Affected files: `templates/project-cache.md`, `templates/povo.agent.md`, `skills/analysis/SKILL.md`, `skills/change-intake/SKILL.md`, `skills/design/SKILL.md`, `skills/implementation/SKILL.md`, `skills/testing/SKILL.md`, `skills/review/SKILL.md`, `skills/specification/SKILL.md`, `platforms/copilot/.github/copilot-instructions.md`, `platforms/claude/CLAUDE.md`, `platforms/gemini/.gemini/styleguide.md`, `platforms/opencode/AGENTS.md`, `platforms/opencode/opencode.json`, `Docs/project-cache-system.md`, `Docs/framework-ai-enhancement-phase.md`, `.github/copilot-memory.md`.
 
+### 2026-07-18 - Flutter MSIX Installer skill added
+
+- Created `flutter/skills/flutter-msix-installer/SKILL.md` — pattern-specific skill for creating self-contained MSIX installers for Flutter Windows apps. Covers prerequisites, msix_config setup, build & packaging, DLL verification, beta distribution with certificate, storage path guidance, and sign-off checklist.
+- Created `Docs/flutter-msix-installer.md` — documentation for the new skill.
+- Why: Flutter Windows desktop projects require MSIX packaging for distribution outside the Microsoft Store. The framework was missing a dedicated skill for this process, and without it developers had to research the procedure manually. The skill was ported from the NpGmao project where it was battle-tested for real-world Windows distribution.
+- Affected files: `flutter/skills/flutter-msix-installer/SKILL.md`, `Docs/flutter-msix-installer.md`, `VERSION`.
+
 ### 2026-04-25 - Enhancement phase introduced
 
 - Added enhancement-phase rules to `.github/copilot-instructions.md`.
