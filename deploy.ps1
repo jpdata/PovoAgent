@@ -4,11 +4,11 @@
     and technology pattern) into a target project.
 
 .DESCRIPTION
-    Combines an AI-platform template (Copilot, Gemini, Claude) with a technology
+    Combines an AI-platform template (Copilot, Gemini, Claude, OpenCode, Codex) with a technology
     pattern (Flutter, .NET, …) and copies the result into the target project folder.
 
 .PARAMETER Platform
-    AI platform to deploy: copilot | gemini | claude.
+    AI platform to deploy: copilot | gemini | claude | opencode | codex.
 
 .PARAMETER Pattern
     Technology pattern(s) to deploy: flutter | dotnet | angular | react | astro.
@@ -23,12 +23,18 @@
 .PARAMETER GitHooks
     Deploy git hooks (pre-commit auto-version-bump) to target project's .git/hooks/.
 
+.PARAMETER CopilotChat
+    Also configure the project for VS Code Copilot Chat: deploys Copilot instructions,
+    agents, skills, lifecycle prompts, and .vscode/settings.json alongside the chosen
+    platform. Has no additional effect when the platform is already copilot.
+
 .EXAMPLE
     .\deploy.ps1 -Platform copilot -Pattern flutter -Target C:\Projects\MyApp
     .\deploy.ps1 -p copilot -t flutter -d C:\Projects\MyApp
     .\deploy.ps1 -Platform copilot -Pattern "flutter,dotnet" -Target C:\Projects\MyApp
     .\deploy.ps1 -p copilot -t "flutter,dotnet" -d C:\Projects\MyApp
     .\deploy.ps1 -Platform copilot -Pattern flutter -Target C:\Projects\MyApp -GitHooks
+    .\deploy.ps1 -Platform codex -Pattern flutter -Target C:\Projects\MyApp -CopilotChat
     .\deploy.ps1   # interactive mode
 #>
 
@@ -38,7 +44,8 @@ param(
     [Alias("t")]  [string[]]$Pattern,
     [Alias("d")]  [string]$Target,
     [Alias("f")]  [switch]$Force,
-    [Alias("gh")] [switch]$GitHooks
+    [Alias("gh")] [switch]$GitHooks,
+    [Alias("cc")] [switch]$CopilotChat
 )
 
 Set-StrictMode -Version Latest
@@ -269,6 +276,10 @@ $PlatformConfig = @{
         AgentsDir = ".opencode\agents"
         SkillsDir = ".opencode\skills"
     }
+    codex = @{
+        AgentsDir = ".codex\agents"
+        SkillsDir = ".codex\skills"
+    }
 }
 
 $Config = $PlatformConfig[$Platform]
@@ -289,7 +300,7 @@ Write-Host ""
 $totalFiles = 0
 
 # 1. Platform instructions template
-Write-Host "[1/7] Platform instructions ($Platform)..." -ForegroundColor Cyan
+Write-Host "[1/8] Platform instructions ($Platform)..." -ForegroundColor Cyan
 $platformSource = Join-Path $PlatformsDir $Platform
 
 if ($Platform -eq "opencode") {
@@ -315,7 +326,7 @@ if ($Platform -eq "opencode") {
 }
 
 # 2. Agent template
-Write-Host "[2/7] Agent template..." -ForegroundColor Cyan
+Write-Host "[2/8] Agent template..." -ForegroundColor Cyan
 $platformAgentSource = Join-Path $TemplatesDir "$Platform\povo.agent.md"
 $agentSource = if (Test-Path $platformAgentSource) { $platformAgentSource } else { Join-Path $TemplatesDir "povo.agent.md" }
 if (Test-Path $agentSource) {
@@ -333,12 +344,12 @@ if (Test-Path $agentSource) {
 }
 
 # 3. Lifecycle skills (generic)
-Write-Host "[3/7] Lifecycle skills..." -ForegroundColor Cyan
+Write-Host "[3/8] Lifecycle skills..." -ForegroundColor Cyan
 $targetSkills = Join-Path $Target $Config.SkillsDir
 $totalFiles += Copy-TreeSafe -Source $SkillsDir -Destination $targetSkills -Label "Lifecycle skills"
 
 # 4. Pattern conventions
-Write-Host "[4/7] Pattern conventions ($($Patterns -join ', '))..." -ForegroundColor Cyan
+Write-Host "[4/8] Pattern conventions ($($Patterns -join ', '))..." -ForegroundColor Cyan
 $multiPattern = $Patterns.Count -gt 1
 foreach ($pat in $Patterns) {
     $patternDir       = Join-Path $ScriptRoot $pat
@@ -358,7 +369,7 @@ foreach ($pat in $Patterns) {
 }
 
 # 5. Pattern agents and skills
-Write-Host "[5/7] Pattern agents and skills ($($Patterns -join ', '))..." -ForegroundColor Cyan
+Write-Host "[5/8] Pattern agents and skills ($($Patterns -join ', '))..." -ForegroundColor Cyan
 $targetAgents = Join-Path $Target $Config.AgentsDir
 foreach ($pat in $Patterns) {
     $patternDir    = Join-Path $ScriptRoot $pat
@@ -372,8 +383,76 @@ foreach ($pat in $Patterns) {
     $totalFiles += Copy-TreeSafe -Source $patternSkills -Destination $targetSkills -Label "Pattern skills ($pat)"
 }
 
-# 6. Update .gitignore
-Write-Host "[6/7] Updating .gitignore..." -ForegroundColor Cyan
+# 6. Copilot Chat for VS Code (optional)
+Write-Host "[6/8] Copilot Chat (VS Code) configuration..." -ForegroundColor Cyan
+$copilotChatDeployed = $false
+if ($CopilotChat) {
+    if ($Platform -eq "copilot") {
+        Write-Host "  [SKIP] Platform is already copilot - Copilot Chat is configured by the platform template." -ForegroundColor DarkGray
+    } else {
+        $copilotSource = Join-Path $PlatformsDir "copilot"
+        $ccAgentsDir   = Join-Path $Target ".github\agents"
+        $ccSkillsDir   = Join-Path $Target ".github\skills"
+
+        # 6a. Copilot instructions template
+        $totalFiles += Copy-TreeSafe -Source $copilotSource -Destination $Target -Label "Copilot Chat instructions"
+
+        # 6b. Main agent (povo.agent.md) for Copilot Chat
+        $ccAgentSource = Join-Path $TemplatesDir "povo.agent.md"
+        if (Test-Path $ccAgentSource) {
+            if (-not (Test-Path $ccAgentsDir)) {
+                New-Item -ItemType Directory -Path $ccAgentsDir -Force | Out-Null
+            }
+            $ccAgentDest = Join-Path $ccAgentsDir "povo.agent.md"
+            if ((Test-Path $ccAgentDest) -and (-not $Force)) {
+                Write-Host "  [EXISTS] .github/agents/povo.agent.md - use -Force to overwrite" -ForegroundColor Yellow
+            } else {
+                Copy-Item -Path $ccAgentSource -Destination $ccAgentDest -Force
+                $totalFiles++
+            }
+        }
+
+        # 6c. Lifecycle skills for Copilot Chat
+        $totalFiles += Copy-TreeSafe -Source $SkillsDir -Destination $ccSkillsDir -Label "Copilot Chat lifecycle skills"
+
+        # 6d. Pattern agents and skills for Copilot Chat
+        foreach ($pat in $Patterns) {
+            $patternDir    = Join-Path $ScriptRoot $pat
+            $patternAgents = Join-Path $patternDir "agents"
+            $patternSkills = Join-Path $patternDir "skills"
+            $totalFiles += Copy-TreeSafe -Source $patternAgents -Destination $ccAgentsDir -Label "Copilot Chat agents ($pat)"
+            $totalFiles += Copy-TreeSafe -Source $patternSkills -Destination $ccSkillsDir -Label "Copilot Chat skills ($pat)"
+        }
+
+        # 6e. Prompts for Copilot Chat
+        $promptsSource = Join-Path $TemplatesDir "vscode\prompts"
+        $promptsDest   = Join-Path $Target ".github\prompts"
+        $totalFiles += Copy-TreeSafe -Source $promptsSource -Destination $promptsDest -Label "Copilot Chat prompts"
+
+        # 6f. VS Code settings
+        $vscodeSource = Join-Path $TemplatesDir "vscode\settings.json"
+        $vscodeDest   = Join-Path $Target ".vscode\settings.json"
+        if (Test-Path $vscodeSource) {
+            if ((Test-Path $vscodeDest) -and (-not $Force)) {
+                Write-Host "  [EXISTS] .vscode/settings.json - use -Force to overwrite" -ForegroundColor Yellow
+            } else {
+                $vscodeDir = Split-Path -Parent $vscodeDest
+                if (-not (Test-Path $vscodeDir)) {
+                    New-Item -ItemType Directory -Path $vscodeDir -Force | Out-Null
+                }
+                Copy-Item -Path $vscodeSource -Destination $vscodeDest -Force
+                $totalFiles++
+                Write-Host "  [OK] .vscode/settings.json deployed" -ForegroundColor Green
+            }
+        }
+        $copilotChatDeployed = $true
+    }
+} else {
+    Write-Host "  [SKIP] Copilot Chat not selected (use -CopilotChat to enable)" -ForegroundColor DarkGray
+}
+
+# 7. Update .gitignore
+Write-Host "[7/8] Updating .gitignore..." -ForegroundColor Cyan
 
 $gitDir = Join-Path $Target ".git"
 if (-not (Test-Path $gitDir)) {
@@ -426,6 +505,35 @@ foreach ($pat in $Patterns) {
     }
 }
 
+# Copilot Chat (VS Code) deployed files
+if ($copilotChatDeployed) {
+    $ignoreEntries += "/.github/copilot-instructions.md"
+    $ignoreEntries += "/.github/agents/povo.agent.md"
+    if (Test-Path $SkillsDir) {
+        Get-ChildItem -Path $SkillsDir -Directory | ForEach-Object {
+            $ignoreEntries += "/.github/skills/$($_.Name)/"
+        }
+    }
+    foreach ($pat in $Patterns) {
+        $patternDir       = Join-Path $ScriptRoot $pat
+        $patternAgentsDir = Join-Path $patternDir "agents"
+        if (Test-Path $patternAgentsDir) {
+            Get-ChildItem -Path $patternAgentsDir -Recurse -File | ForEach-Object {
+                $rel = $_.FullName.Substring($patternAgentsDir.Length).TrimStart('\', '/') -replace '\\', '/'
+                $ignoreEntries += "/.github/agents/$rel"
+            }
+        }
+        $patternSkillsDir = Join-Path $patternDir "skills"
+        if (Test-Path $patternSkillsDir) {
+            Get-ChildItem -Path $patternSkillsDir -Directory | ForEach-Object {
+                $ignoreEntries += "/.github/skills/$($_.Name)/"
+            }
+        }
+    }
+    $ignoreEntries += "/.github/prompts/"
+    $ignoreEntries += "/.vscode/settings.json"
+}
+
 # Write to .gitignore with markers
 $gitignorePath = Join-Path $Target ".gitignore"
 $markerBegin = "# -- PovoAgent BEGIN --"
@@ -450,8 +558,8 @@ if (Test-Path $gitignorePath) {
     Write-Host "  [CREATED] .gitignore" -ForegroundColor White
 }
 
-# 7. Git hooks (optional)
-Write-Host "[7/7] Git hooks..." -ForegroundColor Cyan
+# 8. Git hooks (optional)
+Write-Host "[8/8] Git hooks..." -ForegroundColor Cyan
 $hooksSource = Join-Path $ScriptRoot "hooks"
 
 # Flutter pattern gets a Flutter-specific hook that syncs VERSION → pubspec.yaml
@@ -496,6 +604,9 @@ if ($GitHooks) {
 Write-Host ""
 Write-Host "═══════════════════════════════════════════════════" -ForegroundColor Green
 Write-Host "  Deploy complete - $totalFiles file(s) copied." -ForegroundColor Green
+if ($copilotChatDeployed) {
+    Write-Host "  Copilot Chat: deployed (.github/ + .vscode/settings.json)" -ForegroundColor White
+}
 if ($GitHooks -and (Test-Path (Join-Path (Join-Path $Target ".git") "hooks\pre-commit"))) {
     $hookType = if ($hasFlutter) { "Flutter (VERSION + pubspec.yaml)" } else { "generic (VERSION only)" }
     Write-Host "  Git hooks  : deployed (.git/hooks/pre-commit) — $hookType" -ForegroundColor White

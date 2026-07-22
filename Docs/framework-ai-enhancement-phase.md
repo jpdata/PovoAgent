@@ -110,3 +110,30 @@
 - Updated `.github/agents/project-wide.agent.md` to require `Docs/` updates when Framework core AI files change.
 - Updated `.github/copilot-memory.md` with the durable repository rule.
 - Created this document to establish the phase and its documentation policy.
+
+### 2026-07-22 - OpenAI Codex platform pattern added
+
+- Added `codex` as a new first-class AI platform (OpenAI Codex), alongside Copilot, Gemini, Claude, and OpenCode.
+- Created `platforms/codex/CODEX.md` — project instructions for Codex at the project root.
+- Created `templates/codex/povo.agent.md` — agent template for Codex with YAML frontmatter.
+- Updated `deploy.ps1` with codex entry in `$PlatformConfig` (`.codex\agents`, `.codex\skills`).
+- Updated `deploy.sh` with codex support in `get_agents_dir()`, `get_skills_dir()`, and help text.
+- Updated `README.md` with Codex in platforms table, repository structure, and deploy examples.
+- Created `Docs/codex-pattern.md` — platform documentation.
+- Why: OpenAI Codex is a widely used AI coding assistant. Adding native platform support extends the PovoAgent framework to projects that use Codex as their primary AI tool, following the same pattern established by Claude (`CLAUDE.md`) and other platforms.
+- Affected files: `platforms/codex/CODEX.md`, `templates/codex/povo.agent.md`, `deploy.ps1`, `deploy.sh`, `README.md`, `Docs/codex-pattern.md`, `Docs/framework-ai-enhancement-phase.md`.
+
+### 2026-07-22 - Copilot Chat integration option added to deploy scripts
+
+- Added `-CopilotChat` (`-ch`) switch to `deploy.ps1` and `-c` flag to `deploy.sh` to optionally deploy Copilot Chat infrastructure alongside any primary platform.
+- Created `templates/vscode/settings.json` — minimal VS Code settings enabling prompt files and instruction file locations for Copilot Chat.
+- Created `templates/vscode/prompts/` with lifecycle prompt files: `kickoff.prompt.md`, `change-intake.prompt.md`, `assessment.prompt.md`, `review.prompt.md`, `testing.prompt.md`.
+- New deploy step [6/8] in both scripts: deploys `.github/copilot-instructions.md`, `.github/agents/`, `.github/skills/`, `.github/prompts/`, and `.vscode/settings.json` when `-CopilotChat` / `-c` is set.
+- Behavior: If primary platform is already copilot, the flag is a no-op (Copilot Chat already included); otherwise, Copilot Chat files are deployed alongside the primary platform files (e.g., `.codex/` and `.github/` coexist).
+- Updated `.gitignore` generation to include both platform-specific and Copilot Chat entries.
+- Renumbered steps: git hooks step moved from [7/7] to [8/8]; gitignore step moved from [6/7] to [7/8].
+- Updated `README.md` with new "Copilot Chat Integration (Optional)" section, deploy examples, and updated deploy process step list.
+- Updated both deploy scripts' help text and summary to mention Copilot Chat.
+- Created `Docs/copilot-chat-deploy.md` — comprehensive documentation covering feature overview, deployment scenarios, file structure, coexistence with primary platforms, Copilot Chat files (settings, instructions, agents, prompts), interactive deployment, and next steps.
+- Why: Developers use multiple AI tools in their workflow. This feature enables projects to use Codex, Claude, or another platform as primary development AI, while also leveraging Copilot Chat in VS Code for interactive chat workflows, without platform conflicts.
+- Affected files: `deploy.ps1`, `deploy.sh`, `templates/vscode/settings.json`, `templates/vscode/prompts/*.prompt.md`, `README.md`, `Docs/copilot-chat-deploy.md`, `Docs/framework-ai-enhancement-phase.md`.

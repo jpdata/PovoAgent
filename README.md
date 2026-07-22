@@ -46,9 +46,11 @@ PovoAgent/
 │   │       └── styleguide.md
 │   ├── claude/                       <-- Anthropic Claude
 │   │   └── CLAUDE.md
-│   └── opencode/                     <-- OpenCode
-│       ├── AGENTS.md
-│       └── opencode.json
+│   ├── opencode/                     <-- OpenCode
+│   │   ├── AGENTS.md
+│   │   └── opencode.json
+│   └── codex/                        <-- OpenAI Codex
+│       └── CODEX.md
 ├── skills/                           <-- Generic lifecycle skills (technology-agnostic)
 │   ├── analysis/SKILL.md
 │   ├── design/SKILL.md
@@ -87,6 +89,7 @@ Each pattern contains:
 | Google Gemini    | `platforms/gemini/`  | `.gemini/styleguide.md`           | Markdown style guide          |
 | Anthropic Claude | `platforms/claude/`  | `CLAUDE.md` (project root)        | Markdown project instructions |
 | OpenCode         | `platforms/opencode/`| `AGENTS.md` + `opencode.json`     | Markdown + JSON config        |
+| OpenAI Codex     | `platforms/codex/`   | `CODEX.md` (project root)         | Markdown project instructions |
 
 ## Deploy
 
@@ -100,6 +103,8 @@ Each pattern contains:
 .\deploy.ps1 -Platform copilot -Pattern astro -Target C:\Projects\MarketingSite
 .\deploy.ps1 -Platform claude -Pattern dotnet -Target C:\Projects\Api -Force
 .\deploy.ps1 -Platform opencode -Pattern react -Target C:\Projects\MyReactApp
+.\deploy.ps1 -Platform codex -Pattern flutter -Target C:\Projects\CodexApp
+.\deploy.ps1 -Platform codex -Pattern flutter -Target C:\Projects\CodexApp -CopilotChat
 .\deploy.ps1 -Platform copilot -Pattern dotnet -Target C:\Projects\Api -GitHooks
 ```
 
@@ -113,6 +118,8 @@ Each pattern contains:
 ./deploy.sh -p copilot -t astro -d /path/to/site
 ./deploy.sh -p gemini -t dotnet -d /path/to/project -f
 ./deploy.sh -p opencode -t react -d /path/to/project
+./deploy.sh -p codex -t flutter -d /path/to/project
+./deploy.sh -p codex -t flutter -d /path/to/project -c
 ./deploy.sh -p copilot -t dotnet -d /path/to/project -g
 ```
 
@@ -147,6 +154,40 @@ The framework includes a `hooks/pre-commit` script that **auto-increments the pa
 
 **Interactive mode:** The deploy scripts will ask if you want to deploy hooks when no `-GitHooks` / `-g` flag is provided.
 
+## Copilot Chat Integration (Optional)
+
+Enable **GitHub Copilot Chat** for VS Code integration alongside any AI platform. When enabled, the deploy scripts add:
+- VS Code settings (`.vscode/settings.json`) — enables prompt files and points to instruction locations.
+- Copilot instructions (`.github/copilot-instructions.md`) — framework guidance for Copilot Chat.
+- Copilot agents (`.github/agents/`) — main agent + pattern-specific sub-agents for use in chat.
+- Copilot skills (`.github/skills/`) — lifecycle and pattern-specific skills available to agents.
+- Prompt files (`.github/prompts/`) — ready-made prompts for kickoff, change intake, assessment, review, and testing.
+
+This allows your AI platform (codex, claude, etc.) to coexist with Copilot Chat in the same project.
+
+**Deploy with Copilot Chat:**
+
+```powershell
+# PowerShell
+.\deploy.ps1 -Platform codex -Pattern flutter -Target C:\Projects\MyApp -CopilotChat
+.\deploy.ps1 -Platform claude -Pattern dotnet -Target C:\Projects\Api -CopilotChat -GitHooks
+```
+
+```bash
+# Bash
+./deploy.sh -p codex -t flutter -d /path/to/project -c
+./deploy.sh -p claude -t dotnet -d /path/to/project -c -g
+```
+
+**What happens:**
+
+- If the primary platform is **not** copilot, adds Copilot Chat infrastructure alongside it.
+- If the primary platform **is** copilot, the `-CopilotChat` flag is a no-op (already included).
+- Copilot Chat files land in `.github/` and `.vscode/` — separate from platform-specific files (e.g., `.codex/`, `.claude/`).
+- On each `git commit`, both platform and Copilot Chat versions are tracked in `.gitignore`.
+
+**Interactive mode:** The deploy scripts can ask interactively if you want to enable Copilot Chat when the flag is not provided.
+
 The deploy process:
 
 1. Copies the **platform template** (instructions file) into the target project.
@@ -154,8 +195,9 @@ The deploy process:
 3. Copies **lifecycle skills** into the platform's skills directory.
 4. Copies the **pattern's conventions** (`conventions.md`) into the target root.
 5. Copies the **pattern's agents and skills** into their platform-specific locations.
-6. Updates **`.gitignore`** in the target to exclude all deployed framework files (uses `# -- PovoAgent BEGIN/END --` markers so re-deploys update the section). If no `.git` repo is detected, a warning is shown.
-7. Optionally deploys **git hooks** (pre-commit auto-version-bump) to `.git/hooks/pre-commit` if the `-GitHooks` / `-g` flag is set or chosen interactively.
+6. Optionally deploys **Copilot Chat** integration (`.github/`, `.vscode/settings.json`, prompts) if `-CopilotChat` / `-c` flag is set. Skipped if primary platform is already copilot.
+7. Updates **`.gitignore`** in the target to exclude all deployed framework files (uses `# -- PovoAgent BEGIN/END --` markers so re-deploys update the section). If no `.git` repo is detected, a warning is shown.
+8. Optionally deploys **git hooks** (pre-commit auto-version-bump) to `.git/hooks/pre-commit` if the `-GitHooks` / `-g` flag is set or chosen interactively.
 
 ## What Gets Deployed
 

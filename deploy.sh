@@ -26,23 +26,27 @@ PATTERN=""
 TARGET=""
 FORCE=false
 GIT_HOOKS=false
+COPILOT_CHAT=false
 
 # ── Parse arguments ──────────────────────────────────────────────────────────
-while getopts "p:t:d:fgh" opt; do
+while getopts "p:t:d:fgch" opt; do
     case $opt in
         p) PLATFORM="$OPTARG" ;;
         t) PATTERN="$OPTARG" ;;
         d) TARGET="$OPTARG" ;;
         f) FORCE=true ;;
         g) GIT_HOOKS=true ;;
+        c) COPILOT_CHAT=true ;;
         h)
-            echo "Usage: $0 [-p platform] [-t pattern[,pattern2,...]] [-d target] [-f] [-g]"
-            echo "  -p  AI platform: copilot | gemini | claude"
+            echo "Usage: $0 [-p platform] [-t pattern[,pattern2,...]] [-d target] [-f] [-g] [-c]"
+            echo "  -p  AI platform: copilot | gemini | claude | opencode | codex"
             echo "  -t  Technology pattern(s): flutter | dotnet | angular | react | astro"
             echo "      Accepts comma-separated values: -t flutter,dotnet"
             echo "  -d  Target project path"
             echo "  -f  Force overwrite existing files"
             echo "  -g  Deploy git hooks (pre-commit auto-version-bump)"
+            echo "  -c  Also configure VS Code Copilot Chat (instructions, agents, skills, prompts, settings)"
+            echo "      No additional effect when the platform is already copilot"
             exit 0
             ;;
         *) echo "Unknown option. Use -h for help." >&2; exit 1 ;;
@@ -224,6 +228,7 @@ get_agents_dir() {
         gemini)   echo ".gemini/agents" ;;
         claude)   echo ".claude/agents" ;;
         opencode) echo ".opencode/agents" ;;
+        codex)    echo ".codex/agents" ;;
     esac
 }
 
@@ -233,6 +238,7 @@ get_skills_dir() {
         gemini)   echo ".gemini/skills" ;;
         claude)   echo ".claude/skills" ;;
         opencode) echo ".opencode/skills" ;;
+        codex)    echo ".codex/skills" ;;
     esac
 }
 
@@ -250,7 +256,7 @@ echo -e "${GREEN}═════════════════════
 echo ""
 
 # 1. Platform instructions template
-echo -e "${CYAN}[1/7] Platform instructions (${PLATFORM})...${NC}"
+echo -e "${CYAN}[1/8] Platform instructions (${PLATFORM})...${NC}"
 PLATFORM_SOURCE="$PLATFORMS_DIR/$PLATFORM"
 
 if [[ "$PLATFORM" == "opencode" ]]; then
@@ -277,7 +283,7 @@ else
 fi
 
 # 2. Agent template
-echo -e "${CYAN}[2/7] Agent template...${NC}"
+echo -e "${CYAN}[2/8] Agent template...${NC}"
 PLATFORM_AGENT_SOURCE="$TEMPLATES_DIR/$PLATFORM/povo.agent.md"
 if [[ -f "$PLATFORM_AGENT_SOURCE" ]]; then
     AGENT_SOURCE="$PLATFORM_AGENT_SOURCE"
@@ -297,13 +303,13 @@ if [[ -f "$AGENT_SOURCE" ]]; then
 fi
 
 # 3. Lifecycle skills (generic)
-echo -e "${CYAN}[3/7] Lifecycle skills...${NC}"
+echo -e "${CYAN}[3/8] Lifecycle skills...${NC}"
 copy_tree_safe "$SKILLS_DIR" "$TARGET/$SKILLS_TARGET_DIR" "Lifecycle skills"
 
 # 4. Pattern conventions
 MULTI_PATTERN=false
 [[ ${#PATTERNS[@]} -gt 1 ]] && MULTI_PATTERN=true
-echo -e "${CYAN}[4/7] Pattern conventions ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
+echo -e "${CYAN}[4/8] Pattern conventions ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
 for pat in "${PATTERNS[@]}"; do
     PATTERN_DIR="$SCRIPT_DIR/$pat"
     CONVENTIONS_SOURCE="$PATTERN_DIR/conventions.md"
@@ -326,15 +332,74 @@ for pat in "${PATTERNS[@]}"; do
 done
 
 # 5. Pattern agents & skills
-echo -e "${CYAN}[5/7] Pattern agents & skills ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
+echo -e "${CYAN}[5/8] Pattern agents & skills ($(IFS=', '; echo "${PATTERNS[*]}"))...${NC}"
 for pat in "${PATTERNS[@]}"; do
     PATTERN_DIR="$SCRIPT_DIR/$pat"
     copy_tree_safe "$PATTERN_DIR/agents" "$TARGET/$AGENTS_DIR" "Pattern agents ($pat)"
     copy_tree_safe "$PATTERN_DIR/skills" "$TARGET/$SKILLS_TARGET_DIR" "Pattern skills ($pat)"
 done
 
-# 6. Update .gitignore
-echo -e "${CYAN}[6/7] Updating .gitignore...${NC}"
+# 6. Copilot Chat for VS Code (optional)
+echo -e "${CYAN}[6/8] Copilot Chat (VS Code) configuration...${NC}"
+COPILOT_CHAT_DEPLOYED=false
+if [[ "$COPILOT_CHAT" == true ]]; then
+    if [[ "$PLATFORM" == "copilot" ]]; then
+        echo -e "  ${GRAY}[SKIP] Platform is already copilot — Copilot Chat is configured by the platform template.${NC}"
+    else
+        COPILOT_SOURCE="$PLATFORMS_DIR/copilot"
+        CC_AGENTS_DIR="$TARGET/.github/agents"
+        CC_SKILLS_DIR="$TARGET/.github/skills"
+
+        # 6a. Copilot instructions template
+        copy_tree_safe "$COPILOT_SOURCE" "$TARGET" "Copilot Chat instructions"
+
+        # 6b. Main agent (povo.agent.md) for Copilot Chat
+        CC_AGENT_SOURCE="$TEMPLATES_DIR/povo.agent.md"
+        if [[ -f "$CC_AGENT_SOURCE" ]]; then
+            mkdir -p "$CC_AGENTS_DIR"
+            CC_AGENT_DEST="$CC_AGENTS_DIR/povo.agent.md"
+            if [[ -f "$CC_AGENT_DEST" ]] && [[ "$FORCE" != true ]]; then
+                echo -e "  ${YELLOW}[EXISTS] .github/agents/povo.agent.md — use -f to overwrite${NC}"
+            else
+                cp "$CC_AGENT_SOURCE" "$CC_AGENT_DEST"
+                TOTAL_FILES=$((TOTAL_FILES + 1))
+            fi
+        fi
+
+        # 6c. Lifecycle skills for Copilot Chat
+        copy_tree_safe "$SKILLS_DIR" "$CC_SKILLS_DIR" "Copilot Chat lifecycle skills"
+
+        # 6d. Pattern agents and skills for Copilot Chat
+        for pat in "${PATTERNS[@]}"; do
+            PATTERN_DIR="$SCRIPT_DIR/$pat"
+            copy_tree_safe "$PATTERN_DIR/agents" "$CC_AGENTS_DIR" "Copilot Chat agents ($pat)"
+            copy_tree_safe "$PATTERN_DIR/skills" "$CC_SKILLS_DIR" "Copilot Chat skills ($pat)"
+        done
+
+        # 6e. Prompts for Copilot Chat
+        copy_tree_safe "$TEMPLATES_DIR/vscode/prompts" "$TARGET/.github/prompts" "Copilot Chat prompts"
+
+        # 6f. VS Code settings
+        VSCODE_SOURCE="$TEMPLATES_DIR/vscode/settings.json"
+        VSCODE_DEST="$TARGET/.vscode/settings.json"
+        if [[ -f "$VSCODE_SOURCE" ]]; then
+            if [[ -f "$VSCODE_DEST" ]] && [[ "$FORCE" != true ]]; then
+                echo -e "  ${YELLOW}[EXISTS] .vscode/settings.json — use -f to overwrite${NC}"
+            else
+                mkdir -p "$TARGET/.vscode"
+                cp "$VSCODE_SOURCE" "$VSCODE_DEST"
+                TOTAL_FILES=$((TOTAL_FILES + 1))
+                echo -e "  ${GREEN}[OK] .vscode/settings.json deployed${NC}"
+            fi
+        fi
+        COPILOT_CHAT_DEPLOYED=true
+    fi
+else
+    echo -e "  ${GRAY}[SKIP] Copilot Chat not selected (use -c to enable)${NC}"
+fi
+
+# 7. Update .gitignore
+echo -e "${CYAN}[7/8] Updating .gitignore...${NC}"
 
 if [[ ! -d "$TARGET/.git" ]]; then
     echo -e "  ${YELLOW}[WARN] No git repository detected at '$TARGET'.${NC}"
@@ -391,6 +456,37 @@ for pat in "${PATTERNS[@]}"; do
     fi
 done
 
+# Copilot Chat (VS Code) deployed files
+if [[ "$COPILOT_CHAT_DEPLOYED" == true ]]; then
+    IGNORE_ENTRIES+=("/.github/copilot-instructions.md")
+    IGNORE_ENTRIES+=("/.github/agents/povo.agent.md")
+    if [[ -d "$SKILLS_DIR" ]]; then
+        while IFS= read -r -d '' dir; do
+            dirname="$(basename "$dir")"
+            IGNORE_ENTRIES+=("/.github/skills/$dirname/")
+        done < <(find "$SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
+    fi
+    for pat in "${PATTERNS[@]}"; do
+        PATTERN_DIR="$SCRIPT_DIR/$pat"
+        PATTERN_AGENTS_DIR="$PATTERN_DIR/agents"
+        if [[ -d "$PATTERN_AGENTS_DIR" ]]; then
+            while IFS= read -r -d '' file; do
+                rel="${file#"$PATTERN_AGENTS_DIR"/}"
+                IGNORE_ENTRIES+=("/.github/agents/$rel")
+            done < <(find "$PATTERN_AGENTS_DIR" -type f -print0)
+        fi
+        PATTERN_SKILLS_DIR="$PATTERN_DIR/skills"
+        if [[ -d "$PATTERN_SKILLS_DIR" ]]; then
+            while IFS= read -r -d '' dir; do
+                dirname="$(basename "$dir")"
+                IGNORE_ENTRIES+=("/.github/skills/$dirname/")
+            done < <(find "$PATTERN_SKILLS_DIR" -mindepth 1 -maxdepth 1 -type d -print0)
+        fi
+    done
+    IGNORE_ENTRIES+=("/.github/prompts/")
+    IGNORE_ENTRIES+=("/.vscode/settings.json")
+fi
+
 # Sort and deduplicate
 mapfile -t IGNORE_ENTRIES < <(printf '%s\n' "${IGNORE_ENTRIES[@]}" | sort -u)
 
@@ -427,8 +523,8 @@ else
     echo -e "  ${WHITE}[CREATED] .gitignore${NC}"
 fi
 
-# 7. Git hooks (optional)
-echo -e "${CYAN}[7/7] Git hooks...${NC}"
+# 8. Git hooks (optional)
+echo -e "${CYAN}[8/8] Git hooks...${NC}"
 HOOKS_SOURCE="$SCRIPT_DIR/hooks"
 
 # Flutter pattern gets a Flutter-specific hook that syncs VERSION → pubspec.yaml
@@ -472,6 +568,9 @@ fi
 echo ""
 echo -e "${GREEN}═══════════════════════════════════════════════════${NC}"
 echo -e "${GREEN}  Deploy complete — ${TOTAL_FILES} file(s) copied.${NC}"
+if [[ "$COPILOT_CHAT_DEPLOYED" == true ]]; then
+    echo -e "${WHITE}  Copilot Chat: deployed (.github/ + .vscode/settings.json)${NC}"
+fi
 if [[ "$GIT_HOOKS" == true ]] && [[ -f "$TARGET/.git/hooks/pre-commit" ]]; then
     if [[ "$HAS_FLUTTER" == true ]]; then
         echo -e "${WHITE}  Git hooks  : deployed (.git/hooks/pre-commit) — Flutter (VERSION + pubspec.yaml)${NC}"
