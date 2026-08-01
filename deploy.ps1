@@ -121,6 +121,11 @@ if (-not $Target) {
     $Target = Read-Host "`nTarget project path"
 }
 
+if (-not $CopilotChat) {
+    $copilotChatChoice = Read-Host "`nEnable Copilot Chat for VS Code? (y/N)"
+    $CopilotChat = $copilotChatChoice -match '^[Yy]$'
+}
+
 if (-not $GitHooks) {
     $hooksChoice = Read-Host "`nDeploy git hooks (pre-commit auto-version-bump)? (y/N)"
     $GitHooks = $hooksChoice -match '^[Yy]$'

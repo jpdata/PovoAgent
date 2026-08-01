@@ -140,6 +140,13 @@ if [[ -z "$TARGET" ]]; then
     read -rp "Target project path: " TARGET
 fi
 
+if [[ "$COPILOT_CHAT" != true ]]; then
+    read -rp $'\nEnable Copilot Chat for VS Code? (y/N): ' copilot_chat_choice
+    if [[ "$copilot_chat_choice" =~ ^[Yy]$ ]]; then
+        COPILOT_CHAT=true
+    fi
+fi
+
 if [[ "$GIT_HOOKS" != true ]]; then
     read -rp $'\nDeploy git hooks (pre-commit auto-version-bump)? (y/N): ' hooks_choice
     if [[ "$hooks_choice" =~ ^[Yy]$ ]]; then
