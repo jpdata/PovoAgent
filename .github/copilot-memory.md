@@ -123,3 +123,21 @@
 - Scaffold is now an explicit lifecycle phase (was only a pattern-specific skill before).
 - Both `templates/povo.agent.md` and `templates/opencode/povo.agent.md` updated to reflect the 8-phase lifecycle and split workflow (new project vs. existing project).
 - Added `Docs/new-project-lifecycle.md` documenting the complete flow, artifact map, cross-platform table, cross-pattern table, and milestone checklist template.
+
+## Default Operating Procedure (2026-08-01)
+
+- PovoAgent now has a mandatory **Default Operating Procedure** encoded in all agent templates (`templates/*/povo.agent.md`) and platform instruction files (`platforms/*/`).
+- The procedure enforces: **Analyze → Plan → Interview (when ambiguous) → Execute** for every request, regardless of type or complexity.
+- **Analyze**: understand the request, gather context from project documents (cache, intake, specs) before acting.
+- **Plan**: outline the approach and get explicit user confirmation before modifying files.
+- **Interview**: ask clarifying questions when requirements are ambiguous, incomplete, or have multiple interpretations. Never guess.
+- **Execute**: only proceed after analysis is complete, the plan is approved, and ambiguities are resolved.
+- The four steps scale with request complexity but are always present — no step is ever skipped.
+
+## PovoDirect Agent — Legacy Direct Mode (2026-08-01)
+
+- Created **PovoDirect** as a companion agent (`povo-direct.agent.md`) that preserves legacy direct-execution behavior.
+- PovoDirect is identical to PovoAgent but without the mandatory "Default Operating Procedure" section.
+- Available in all three platform variants: standard (`templates/povo-direct.agent.md`), Codex (`templates/codex/povo-direct.agent.md`), OpenCode (`templates/opencode/povo-direct.agent.md`).
+- Use PovoDirect for: quick tasks, follow-ups, or when the user already has a clear plan and doesn't need procedural analysis.
+- Use PovoAgent (with DOP) for: complex or ambiguous work that benefits from Analyze → Plan → Interview → Execute.

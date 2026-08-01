@@ -29,6 +29,25 @@
 
 ## Documented Updates
 
+### 2026-08-01 - PovoDirect agent: legacy direct-execution mode
+
+- Created **PovoDirect** — a companion agent that preserves the legacy direct-execution behavior (no mandatory Analyze → Plan → Interview sequence).
+- Created `templates/povo-direct.agent.md`, `templates/codex/povo-direct.agent.md`, `templates/opencode/povo-direct.agent.md`.
+- Each is identical to its `povo.agent.md` counterpart except: (a) no "Default Operating Procedure" section, (b) agent name is `PovoDirect`, (c) description flags it as direct-mode.
+- Use cases: quick tasks, follow-ups, or situations where the user already knows exactly what to do and doesn't need procedural analysis.
+- Why: the mandatory Analyze → Plan → Interview → Execute procedure added in the previous enhancement is valuable for complex work but can be unnecessarily slow for trivial or well-understood tasks. PovoDirect gives users the option to bypass it.
+- Affected files: `templates/povo-direct.agent.md`, `templates/codex/povo-direct.agent.md`, `templates/opencode/povo-direct.agent.md`, `Docs/framework-ai-enhancement-phase.md`, `.github/copilot-memory.md`, `VERSION`.
+
+### 2026-08-01 - Default Operating Procedure: Analyze → Plan → Interview → Execute
+
+- Added **Default Operating Procedure** to all PovoAgent agent templates and platform instruction files.
+- The procedure enforces a mandatory sequence for every request: **Analyze** (understand the request and gather context), **Plan** (outline approach and get user confirmation), **Interview** (ask clarifying questions when ambiguous), **Execute** (only after previous steps are complete).
+- Updated `templates/povo.agent.md`, `templates/codex/povo.agent.md`, `templates/opencode/povo.agent.md` with the new "Default Operating Procedure" section.
+- Updated all five platform instruction files: `platforms/opencode/AGENTS.md`, `platforms/codex/CODEX.md`, `platforms/claude/CLAUDE.md`, `platforms/copilot/.github/copilot-instructions.md`, `platforms/gemini/.gemini/styleguide.md`.
+- Updated `Docs/framework-ai-enhancement-phase.md` and `.github/copilot-memory.md` to document this enhancement.
+- Why: users previously had to explicitly request "analyze, plan, and interview me if needed" for every prompt. This encodes the Analyze → Plan → Interview → Execute sequence as PovoAgent's default behavior, ensuring the agent never skips understanding the request, never implements without a confirmed plan, and never guesses when requirements are ambiguous.
+- Affected files: `templates/povo.agent.md`, `templates/codex/povo.agent.md`, `templates/opencode/povo.agent.md`, `platforms/opencode/AGENTS.md`, `platforms/codex/CODEX.md`, `platforms/claude/CLAUDE.md`, `platforms/copilot/.github/copilot-instructions.md`, `platforms/gemini/.gemini/styleguide.md`, `Docs/framework-ai-enhancement-phase.md`, `.github/copilot-memory.md`, `VERSION`.
+
 ### 2026-06-05 - OpenCode MCP config schema migration
 
 - Updated `platforms/opencode/opencode.json` MCP server entries from legacy format to current OpenCode schema.

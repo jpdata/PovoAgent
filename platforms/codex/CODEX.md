@@ -4,6 +4,17 @@
 
 This project uses the PovoAgent AI framework. It follows decoupled architecture principles with separation between presentation (UI), business logic, and backend. Refer to `conventions.md` for technology-specific rules and `povo` agent for the development lifecycle.
 
+## Default Operating Procedure
+
+For every user request, regardless of complexity, follow this mandatory sequence:
+
+1. **Analyze** — Understand the request. Identify what is being asked, what context is needed, and what the scope of impact is. Read relevant project documents (cache, intake, specs) before acting.
+2. **Plan** — Outline the approach before writing code or modifying files. Describe the phases, files to touch, and sequence of actions. Present the plan to the user for explicit confirmation before executing.
+3. **Interview** — When any part of the request is ambiguous, incomplete, or has multiple valid interpretations, ask clarifying questions before proceeding. Never assume or guess when the requirement is unclear. Prefer asking one focused question at a time.
+4. **Execute** — Only after analysis is complete, the plan is approved, and all ambiguities have been resolved, proceed with implementation.
+
+This procedure applies to all interactions — new features, bug fixes, refactors, assessments, simple questions, or any other request. The depth of each step scales with the complexity of the request, but no step is ever skipped.
+
 ## Architecture Rules
 
 - Frontend and backend must be fully decoupled. Communication only through defined APIs/contracts.
