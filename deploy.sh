@@ -291,22 +291,26 @@ fi
 
 # 2. Agent template
 echo -e "${CYAN}[2/8] Agent template...${NC}"
-PLATFORM_AGENT_SOURCE="$TEMPLATES_DIR/$PLATFORM/povo.agent.md"
-if [[ -f "$PLATFORM_AGENT_SOURCE" ]]; then
-    AGENT_SOURCE="$PLATFORM_AGENT_SOURCE"
+PLATFORM_AGENT_SOURCE_DIR="$TEMPLATES_DIR/$PLATFORM"
+if [[ -d "$PLATFORM_AGENT_SOURCE_DIR" ]] && compgen -G "$PLATFORM_AGENT_SOURCE_DIR/*.agent.md" > /dev/null; then
+    AGENT_SOURCE_DIR="$PLATFORM_AGENT_SOURCE_DIR"
 else
-    AGENT_SOURCE="$TEMPLATES_DIR/povo.agent.md"
+    AGENT_SOURCE_DIR="$TEMPLATES_DIR"
 fi
-if [[ -f "$AGENT_SOURCE" ]]; then
+if compgen -G "$AGENT_SOURCE_DIR/*.agent.md" > /dev/null; then
     AGENT_DEST_DIR="$TARGET/$AGENTS_DIR"
     mkdir -p "$AGENT_DEST_DIR"
-    AGENT_DEST="$AGENT_DEST_DIR/povo.agent.md"
-    if [[ -f "$AGENT_DEST" ]] && [[ "$FORCE" != true ]]; then
-        echo -e "  ${YELLOW}[EXISTS] povo.agent.md - use -f to overwrite${NC}"
-    else
-        cp "$AGENT_SOURCE" "$AGENT_DEST"
-        TOTAL_FILES=$((TOTAL_FILES + 1))
-    fi
+    for agent_file in "$AGENT_SOURCE_DIR"/*.agent.md; do
+        [[ -f "$agent_file" ]] || continue
+        agent_name="$(basename "$agent_file")"
+        AGENT_DEST="$AGENT_DEST_DIR/$agent_name"
+        if [[ -f "$AGENT_DEST" ]] && [[ "$FORCE" != true ]]; then
+            echo -e "  ${YELLOW}[EXISTS] $agent_name - use -f to overwrite${NC}"
+        else
+            cp "$agent_file" "$AGENT_DEST"
+            TOTAL_FILES=$((TOTAL_FILES + 1))
+        fi
+    done
 fi
 
 # 3. Lifecycle skills (generic)
@@ -360,17 +364,20 @@ if [[ "$COPILOT_CHAT" == true ]]; then
         # 6a. Copilot instructions template
         copy_tree_safe "$COPILOT_SOURCE" "$TARGET" "Copilot Chat instructions"
 
-        # 6b. Main agent (povo.agent.md) for Copilot Chat
-        CC_AGENT_SOURCE="$TEMPLATES_DIR/povo.agent.md"
-        if [[ -f "$CC_AGENT_SOURCE" ]]; then
+        # 6b. Agent templates for Copilot Chat
+        if compgen -G "$TEMPLATES_DIR/*.agent.md" > /dev/null; then
             mkdir -p "$CC_AGENTS_DIR"
-            CC_AGENT_DEST="$CC_AGENTS_DIR/povo.agent.md"
-            if [[ -f "$CC_AGENT_DEST" ]] && [[ "$FORCE" != true ]]; then
-                echo -e "  ${YELLOW}[EXISTS] .github/agents/povo.agent.md — use -f to overwrite${NC}"
-            else
-                cp "$CC_AGENT_SOURCE" "$CC_AGENT_DEST"
-                TOTAL_FILES=$((TOTAL_FILES + 1))
-            fi
+            for cc_agent_file in "$TEMPLATES_DIR"/*.agent.md; do
+                [[ -f "$cc_agent_file" ]] || continue
+                cc_agent_name="$(basename "$cc_agent_file")"
+                CC_AGENT_DEST="$CC_AGENTS_DIR/$cc_agent_name"
+                if [[ -f "$CC_AGENT_DEST" ]] && [[ "$FORCE" != true ]]; then
+                    echo -e "  ${YELLOW}[EXISTS] .github/agents/$cc_agent_name — use -f to overwrite${NC}"
+                else
+                    cp "$cc_agent_file" "$CC_AGENT_DEST"
+                    TOTAL_FILES=$((TOTAL_FILES + 1))
+                fi
+            done
         fi
 
         # 6c. Lifecycle skills for Copilot Chat
@@ -424,8 +431,19 @@ if [[ -d "$PLATFORM_SOURCE" ]]; then
     done < <(find "$PLATFORM_SOURCE" -type f -print0)
 fi
 
-# Main agent
-IGNORE_ENTRIES+=("/$AGENTS_DIR/povo.agent.md")
+# Main agents (all *.agent.md files deployed)
+AGENT_IGNORE_DIR="$TEMPLATES_DIR/$PLATFORM"
+if [[ -d "$AGENT_IGNORE_DIR" ]] && compgen -G "$AGENT_IGNORE_DIR/*.agent.md" > /dev/null; then
+    for af in "$AGENT_IGNORE_DIR"/*.agent.md; do
+        [[ -f "$af" ]] || continue
+        IGNORE_ENTRIES+=("/$AGENTS_DIR/$(basename "$af")")
+    done
+else
+    for af in "$TEMPLATES_DIR"/*.agent.md; do
+        [[ -f "$af" ]] || continue
+        IGNORE_ENTRIES+=("/$AGENTS_DIR/$(basename "$af")")
+    done
+fi
 
 # Lifecycle skills (as directories)
 if [[ -d "$SKILLS_DIR" ]]; then
@@ -466,7 +484,12 @@ done
 # Copilot Chat (VS Code) deployed files
 if [[ "$COPILOT_CHAT_DEPLOYED" == true ]]; then
     IGNORE_ENTRIES+=("/.github/copilot-instructions.md")
-    IGNORE_ENTRIES+=("/.github/agents/povo.agent.md")
+    if compgen -G "$TEMPLATES_DIR/*.agent.md" > /dev/null; then
+        for ccaf in "$TEMPLATES_DIR"/*.agent.md; do
+            [[ -f "$ccaf" ]] || continue
+            IGNORE_ENTRIES+=("/.github/agents/$(basename "$ccaf")")
+        done
+    fi
     if [[ -d "$SKILLS_DIR" ]]; then
         while IFS= read -r -d '' dir; do
             dirname="$(basename "$dir")"

@@ -141,3 +141,10 @@
 - Available in all three platform variants: standard (`templates/povo-direct.agent.md`), Codex (`templates/codex/povo-direct.agent.md`), OpenCode (`templates/opencode/povo-direct.agent.md`).
 - Use PovoDirect for: quick tasks, follow-ups, or when the user already has a clear plan and doesn't need procedural analysis.
 - Use PovoAgent (with DOP) for: complex or ambiguous work that benefits from Analyze → Plan → Interview → Execute.
+
+## Deploy Scripts — All *.agent.md Discovery (2026-08-01)
+
+- `deploy.ps1` and `deploy.sh` now deploy **all** `*.agent.md` files, not just `povo.agent.md`.
+- Step 2 and Step 6b use glob/file-filtering to discover and copy every `.agent.md` file in the source directory.
+- `.gitignore` entries are also generated dynamically from discovered agent files.
+- Future-proof: any new agent (e.g., `povo-direct.agent.md`) is automatically deployed without script changes.

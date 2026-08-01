@@ -29,6 +29,15 @@
 
 ## Documented Updates
 
+### 2026-08-01 - Deploy scripts: deploy all *.agent.md files
+
+- Fixed `deploy.ps1` and `deploy.sh` to deploy **all** `*.agent.md` files from the template source directory, not just `povo.agent.md`.
+- Step 2 (Agent template): now uses `Get-ChildItem -Filter "*.agent.md"` (PS) / `*.agent.md` glob (bash) to discover and copy all agent files in the source directory.
+- Step 6b (Copilot Chat agents): same discovery and copy logic for `.github/agents/`.
+- `.gitignore` generation: updated to list all discovered `*.agent.md` files instead of hardcoding `povo.agent.md` only.
+- Why: after creating the `povo-direct.agent.md` companion agent, deploy didn't include it because the scripts hardcoded `povo.agent.md` as a single file. This fix makes agent deployment future-proof — any new `*.agent.md` file in the template directory is automatically deployed.
+- Affected files: `deploy.ps1`, `deploy.sh`, `VERSION`.
+
 ### 2026-08-01 - PovoDirect agent: legacy direct-execution mode
 
 - Created **PovoDirect** — a companion agent that preserves the legacy direct-execution behavior (no mandatory Analyze → Plan → Interview sequence).

@@ -332,19 +332,22 @@ if ($Platform -eq "opencode") {
 
 # 2. Agent template
 Write-Host "[2/8] Agent template..." -ForegroundColor Cyan
-$platformAgentSource = Join-Path $TemplatesDir "$Platform\povo.agent.md"
-$agentSource = if (Test-Path $platformAgentSource) { $platformAgentSource } else { Join-Path $TemplatesDir "povo.agent.md" }
-if (Test-Path $agentSource) {
+$platformAgentSourceDir = Join-Path $TemplatesDir $Platform
+$agentSourceDir = if ((Test-Path $platformAgentSourceDir) -and (Get-ChildItem -Path $platformAgentSourceDir -Filter "*.agent.md" -File)) { $platformAgentSourceDir } else { $TemplatesDir }
+if (Test-Path $agentSourceDir) {
     $agentDestDir = Join-Path $Target $Config.AgentsDir
     if (-not (Test-Path $agentDestDir)) {
         New-Item -ItemType Directory -Path $agentDestDir -Force | Out-Null
     }
-    $agentDest = Join-Path $agentDestDir "povo.agent.md"
-    if ((Test-Path $agentDest) -and (-not $Force)) {
-        Write-Host "  [EXISTS] povo.agent.md - use -Force to overwrite" -ForegroundColor Yellow
-    } else {
-        Copy-Item -Path $agentSource -Destination $agentDest -Force
-        $totalFiles++
+    $agentFiles = Get-ChildItem -Path $agentSourceDir -Filter "*.agent.md" -File
+    foreach ($agentFile in $agentFiles) {
+        $agentDest = Join-Path $agentDestDir $agentFile.Name
+        if ((Test-Path $agentDest) -and (-not $Force)) {
+            Write-Host "  [EXISTS] $($agentFile.Name) - use -Force to overwrite" -ForegroundColor Yellow
+        } else {
+            Copy-Item -Path $agentFile.FullName -Destination $agentDest -Force
+            $totalFiles++
+        }
     }
 }
 
@@ -402,18 +405,21 @@ if ($CopilotChat) {
         # 6a. Copilot instructions template
         $totalFiles += Copy-TreeSafe -Source $copilotSource -Destination $Target -Label "Copilot Chat instructions"
 
-        # 6b. Main agent (povo.agent.md) for Copilot Chat
-        $ccAgentSource = Join-Path $TemplatesDir "povo.agent.md"
-        if (Test-Path $ccAgentSource) {
+        # 6b. Agent templates for Copilot Chat
+        $ccAgentsSourceDir = $TemplatesDir
+        if ((Test-Path $ccAgentsSourceDir) -and (Get-ChildItem -Path $ccAgentsSourceDir -Filter "*.agent.md" -File)) {
             if (-not (Test-Path $ccAgentsDir)) {
                 New-Item -ItemType Directory -Path $ccAgentsDir -Force | Out-Null
             }
-            $ccAgentDest = Join-Path $ccAgentsDir "povo.agent.md"
-            if ((Test-Path $ccAgentDest) -and (-not $Force)) {
-                Write-Host "  [EXISTS] .github/agents/povo.agent.md - use -Force to overwrite" -ForegroundColor Yellow
-            } else {
-                Copy-Item -Path $ccAgentSource -Destination $ccAgentDest -Force
-                $totalFiles++
+            $ccAgentFiles = Get-ChildItem -Path $ccAgentsSourceDir -Filter "*.agent.md" -File
+            foreach ($ccAgentFile in $ccAgentFiles) {
+                $ccAgentDest = Join-Path $ccAgentsDir $ccAgentFile.Name
+                if ((Test-Path $ccAgentDest) -and (-not $Force)) {
+                    Write-Host "  [EXISTS] .github/agents/$($ccAgentFile.Name) - use -Force to overwrite" -ForegroundColor Yellow
+                } else {
+                    Copy-Item -Path $ccAgentFile.FullName -Destination $ccAgentDest -Force
+                    $totalFiles++
+                }
             }
         }
 
@@ -476,8 +482,13 @@ if (Test-Path $platformSource) {
     }
 }
 
-# Main agent
-$ignoreEntries += "/$($Config.AgentsDir -replace '\\', '/')/povo.agent.md"
+# Main agents (all *.agent.md files deployed)
+$agentIgnoreDir = if (Test-Path (Join-Path $TemplatesDir $Platform)) { Join-Path $TemplatesDir $Platform } else { $TemplatesDir }
+if (Test-Path $agentIgnoreDir) {
+    Get-ChildItem -Path $agentIgnoreDir -Filter "*.agent.md" -File | ForEach-Object {
+        $ignoreEntries += "/$($Config.AgentsDir -replace '\\', '/')/$($_.Name)"
+    }
+}
 
 # Lifecycle skills (as directories)
 if (Test-Path $SkillsDir) {
@@ -513,7 +524,11 @@ foreach ($pat in $Patterns) {
 # Copilot Chat (VS Code) deployed files
 if ($copilotChatDeployed) {
     $ignoreEntries += "/.github/copilot-instructions.md"
-    $ignoreEntries += "/.github/agents/povo.agent.md"
+    if ((Test-Path $TemplatesDir) -and (Get-ChildItem -Path $TemplatesDir -Filter "*.agent.md" -File)) {
+        Get-ChildItem -Path $TemplatesDir -Filter "*.agent.md" -File | ForEach-Object {
+            $ignoreEntries += "/.github/agents/$($_.Name)"
+        }
+    }
     if (Test-Path $SkillsDir) {
         Get-ChildItem -Path $SkillsDir -Directory | ForEach-Object {
             $ignoreEntries += "/.github/skills/$($_.Name)/"
