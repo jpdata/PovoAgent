@@ -70,13 +70,13 @@ test/
 - **domain/** must contain only pure Dart. No Flutter imports (`import 'package:flutter/...'`) allowed.
 - **data/** implements interfaces defined in **domain/**. Never import from **presentation/**.
 - **presentation/** depends on **domain/** only through use cases or ViewModels. Never imports from **data/** directly.
-- Dependency injection wires layers together (e.g., `get_it`, `injectable`).
+- **Dependency injection wires layers together via Riverpod's `ProviderScope` and overrides.** `get_it` + `injectable` are only used in non-Riverpod projects.
 
 ### Vertical Slice Architecture
 - **Each slice is self-contained.** A slice must not import another slice's widgets, viewmodels, or data sources directly.
 - **Cross-slice communication through contracts/events/.** Use integration events or shared kernel interfaces. Never call another slice's use case directly.
 - **shared/kernel/ is for infrastructure, not business logic.** Shared UI primitives, routing, and DI setup belong here. Business rules stay in slices.
-- **DI composes slices.** Each slice exports a registration module; `main.dart` wires all modules together.
+- **DI composes slices.** Each slice exports a registration module; `main.dart` wires all modules together via `ProviderScope`.
 
 ## SOLID in Flutter
 
@@ -93,23 +93,24 @@ These principles apply to both architectures:
 ### Clean Architecture Patterns
 - **Repository:** All data access through abstract repositories in `domain/repositories/`, implemented in `data/repositories/`.
 - **Use Case / Interactor:** One class per business operation in `domain/usecases/`. Receives repositories via constructor.
-- **Dependency Injection:** `get_it` + `injectable` (or manual registration). All wiring in a single setup file.
-- **Observer:** State management (Bloc/Cubit/Riverpod) acts as the observer pattern for UI reactivity.
+- **Dependency Injection:** Riverpod's `ProviderScope` handles DI natively. Use `overrideWith` in tests. For non-Riverpod projects, `get_it` + `injectable`.
+- **Observer:** State management (Riverpod providers / Bloc/Cubit) acts as the observer pattern for UI reactivity.
 - **Factory:** Use `freezed` or factory constructors for entities/DTOs with complex creation logic.
 - **Adapter:** Wrap external SDKs (Firebase, platform channels) behind interfaces in `data/datasources/`.
 
 ### Vertical Slice Architecture Patterns
 - **Handler per operation:** Each user action in a slice has a dedicated use case or handler class.
-- **Feature-scoped state:** Each slice manages its own state (Cubit / Notifier / Riverpod provider scoped to the feature). No global state for feature-specific data.
+- **Feature-scoped state:** Each slice manages its own state (Riverpod provider or Notifier scoped to the feature). No global state for feature-specific data.
 - **Feature-scoped data access:** Each slice defines its own data sources and models. Shared data sources only for truly cross-cutting data (e.g., auth token storage).
 - **Integration Events:** Cross-slice communication via a lightweight event bus or stream-based events.
 - **Slice registration modules:** Each slice exports a DI module; `main.dart` composes all modules.
 
 ## State Management
 
-- Use Riverpod, Bloc/Cubit, or Provider — chosen per project in the Design phase.
-- ViewModels/Cubits must not contain widget references.
-- Widgets observe state, they do not manage it.
+- Use **Riverpod** by default for state management and dependency injection.
+- `flutter_bloc` (Bloc/Cubit) is available as an alternative when explicitly chosen in the Design phase.
+- ViewModels/Notifiers must not contain widget references.
+- Widgets observe state via `ref.watch`, they do not manage it.
 
 ## Naming Conventions
 
@@ -123,20 +124,22 @@ These principles apply to both architectures:
 
 - Unit tests for **domain/** use cases (no mocking needed, pure Dart).
 - Unit tests for **data/** repositories (mock data sources).
-- Widget tests for **presentation/** (mock ViewModels/Cubits).
+- Widget tests for **presentation/** (mock ViewModels/Notifiers via `ProviderScope.overrides`).
 - Integration tests in `integration_test/` folder.
 
 ## Common Packages
 
-| Purpose              | Package                         | Use/Priority                  |
-|----------------------|---------------------------------|-------------------------------|
-| DI                   | `get_it`, `injectable`          | Ask                           |
-| State management     | `flutter_bloc`, `riverpod`      | Ask                           |
-| HTTP client          | `dio`, `http`                   | `http` > `dio`                |
-| Navigation           | `go_router`, `auto_route`       | `go_router` > `auto_route`    |
-| Local storage        | `hive`, `shared_preferences`    | `shared_preferences` > `hive` |
-| Testing mocks        | `mockito`, `mocktail`           | Ask                           |
-| Code generation      | `freezed`, `json_serializable`  | Both                          |
+| Purpose             | Package                        | Use/Priority                   |
+| ------------------- | ------------------------------ | ------------------------------ |
+| DI                  | `riverpod` (built-in)          | Default                        |
+| State management    | `riverpod`, `flutter_hooks`    | Default                        |
+| DI (alternative)    | `get_it`, `injectable`         | Only for non-Riverpod projects |
+| State (alternative) | `flutter_bloc`                 | Only if explicitly chosen      |
+| HTTP client         | `dio`, `http`                  | `http` > `dio`                 |
+| Navigation          | `go_router`, `auto_route`      | `go_router` > `auto_route`     |
+| Local storage       | `hive`, `shared_preferences`   | `shared_preferences` > `hive`  |
+| Testing mocks       | `mockito`, `mocktail`          | Ask                            |
+| Code generation     | `freezed`, `json_serializable` | Both                           |
 
 ## Package Version Selection
 

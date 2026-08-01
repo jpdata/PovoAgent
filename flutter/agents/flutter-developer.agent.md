@@ -22,8 +22,8 @@ You are a Flutter senior developer specialized in Clean Architecture, SOLID prin
 - Use case and repository implementation.
 - Data source and model (DTO) implementation.
 - Widget, page, and reusable component creation.
-- State management implementation (Riverpod / Bloc / Cubit — per project choice).
-- `get_it` + `injectable` DI registration.
+- State management implementation (Riverpod by default; Bloc / Cubit only if explicitly chosen in the Design phase).
+- DI via Riverpod's `ProviderScope` and overrides. `get_it` + `injectable` only for non-Riverpod projects.
 - Dart test writing (`flutter_test`, `mocktail`, `bloc_test`).
 - Running `flutter build`, `flutter test`, `dart run build_runner build`.
 
@@ -121,7 +121,30 @@ class UserRepositoryImpl implements UserRepository {
 
 ## Presentation Layer
 
-### Cubit (Bloc/Cubit pattern)
+### Riverpod (default)
+```dart
+// presentation/viewmodels/users_provider.dart
+import 'package:riverpod_annotation/riverpod_annotation.dart';
+import '../../domain/entities/user.dart';
+import '../../domain/usecases/get_users.dart';
+part 'users_provider.g.dart';
+
+@riverpod
+Future<List<User>> users(UsersRef ref) => ref.watch(getUsersProvider).call();
+
+@riverpod
+GetUsers getUsers(GetUsersRef ref) {
+  // Use case is provided via Riverpod DI — no get_it needed
+  return GetUsers(ref.watch(userRepositoryProvider));
+}
+
+@riverpod
+UserRepository userRepository(UserRepositoryRef ref) {
+  return UserRepositoryImpl(ref.watch(userRemoteDataSourceProvider));
+}
+```
+
+### Cubit (alternative — only if explicitly chosen in Design)
 ```dart
 // presentation/viewmodels/users_cubit.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -142,22 +165,23 @@ class UsersCubit extends Cubit<UsersState> {
 }
 ```
 
-### Riverpod (if project uses Riverpod)
-```dart
-// presentation/viewmodels/users_provider.dart
-import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../domain/entities/user.dart';
-import '../../domain/usecases/get_users.dart';
-part 'users_provider.g.dart';
-
-@riverpod
-Future<List<User>> users(UsersRef ref) => ref.watch(getUsersProvider).call();
-```
-
 ## DI Registration
 
+### Riverpod (default)
+Riverpod handles DI natively via providers. No separate DI container is needed:
+
 ```dart
-// injection.dart (with get_it + injectable)
+// main.dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+void main() {
+  runApp(const ProviderScope(child: MyApp()));
+}
+```
+
+All providers (data sources, repositories, use cases) are declared as Riverpod providers and composed via `ref.watch`.
+
+### get_it + injectable (alternative — only for non-Riverpod projects)
 import 'package:get_it/get_it.dart';
 import 'package:injectable/injectable.dart';
 import 'injection.config.dart';
@@ -179,8 +203,9 @@ Run: `dart run build_runner build --delete-conflicting-outputs`
 
 - Test file: same path structure under `test/`, `snake_case_test.dart`.
 - Use `mocktail` for mocking (no code generation needed).
-- Use `bloc_test` for Cubit/Bloc state verification.
-- Widget tests: `WidgetTester` with `pumpWidget` and `pump`.
+- Use Riverpod's `ProviderScope.overrides` for provider testing.
+- Use `bloc_test` for Cubit/Bloc state verification (only in non-Riverpod projects).
+- Widget tests: pump with `ProviderScope` wrapping mocked providers.
 
 ```dart
 // test/domain/usecases/get_users_test.dart
