@@ -1,8 +1,15 @@
-# Copilot Memory (Deprecated)
+# Project Memory
+
+- This is the shared persistent memory file for this repository and for all supported AI platforms.
+- Use `.github/project-memory.md` as the canonical project memory location across Copilot, OpenCode, Claude, Gemini, Codex, and other AI platforms.
+- At the start of a task, read this file before making decisions that depend on prior corrections or agreements.
+- Record user corrections, durable decisions, reusable knowledge, and carry-over items here.
+- Keep entries short, factual, and easy to prune.
+- Remove or rewrite items that are no longer valid.
 
 ## Durable Knowledge
 
-- This file is deprecated. Use `.github/project-memory.md` as the canonical project memory location for all AI platforms.
+- This file is the persistent memory for Copilot in this workspace.
 - Workspace-level Copilot behavior is defined in `.github/copilot-instructions.md`, not in `platforms/` or `templates/`, unless the user explicitly asks for template changes.
 - Workspace-level custom agents for this repository live under `.github/agents/`.
 - `project-wide.agent.md` is the repository-wide agent for changes that span root files, shared skills, templates, platforms, or multiple patterns.
@@ -22,7 +29,7 @@
 
 ## User Corrections
 
-- 2026-04-25: When the user asks for Copilot instructions for this repository, they mean the real workspace file in `./.github`, not the template files under `platforms/`.
+- 2026-04-25: When the user asks for Copilot instructions for this repository, they mean the real workspace file in `./.github`, not in the template files under `platforms/`.
 - 2026-04-25: The Angular pattern should stay at the level of general development guidance; do not prescribe a fixed UI baseline there. Specific design-system and visual-baseline decisions belong to the analysis and design phases of each real project.
 - 2026-04-25: The React pattern should follow the same principle as Angular: keep it at the level of general development guidance and leave framework-specific UI baseline and design-system decisions to the analysis and design phases of each real project.
 
@@ -31,6 +38,7 @@
 - `deploy.ps1` and `deploy.sh` now support multiple patterns in one run via comma-separated input.
 - Single pattern → `conventions.md`; multiple patterns → `conventions-{pattern}.md` per pattern.
 - `.gitignore` block updated to cover all deployed patterns.
+- `deploy.ps1` now fails fast when parsed patterns are empty (e.g., `-t ","`) to avoid silent no-pattern deploy behavior.
 - See `Docs/multi-pattern-deploy.md` for full details.
 
 ## Evolutionary Lifecycle (2026-06-16)
@@ -48,20 +56,14 @@
 - `skills/analysis/SKILL.md` operates in **two modes**: Mode 1 (New Project Analysis) and **Mode 2 (Existing Project Assessment)** with 8 steps including cache generation.
 - Assessment performs a holistic audit across three dimensions: **Architecture** (SOLID, decoupling, patterns, structure), **Technical** (performance, security, maintainability, dependencies, debt), and **Flows** (user flows, data flows, API contracts, cross-slice).
 - `Docs/evolutionary-lifecycle.md` includes **Workflow E — Assessment** (3 phases + optional CR generation).
-- `templates/assessment-report.md` is the output template with severity-classified findings and linked Change Requests.
-- `Docs/assessment-workflow.md` is the comprehensive documentation for the Assessment workflow.
 - Severity levels: Critical → Generate CR + fix now; High → Generate CR + current cycle; Medium → optional CR + next cycle; Low → document only.
 - Assessment is divergent (broad discovery) then convergent (targeted CRs), unlike other workflows that start with a specific change.
-
-## Project Cache System (2026-07-02)
-
-- `PROJECT_CACHE.md` is a machine-generated, machine-read persistent snapshot of the target project's architecture, domain map, file layout, and symbol index.
-- `templates/project-cache.md` is the core schema template, now with **Symbol Index** and **Import/Export Map** sections to eliminate grep-based symbol location.
-- `templates/povo.agent.md` has a new **Project Cache** section defining lifecycle, freshness rules, and incremental update rules.
-- **All lifecycle skills** (design, implementation, testing, review, specification) now have a **Pre-Step** that reads `PROJECT_CACHE.md` before scanning the codebase.
-- `change-intake` already reads the cache (Pre-Intake Check). `analysis` already generates it (Mode 2, Step 8).
-- All four platform configs (Copilot, Claude, Gemini, OpenCode) now reference `PROJECT_CACHE.md`.
-- `opencode.json` includes `PROJECT_CACHE.md` in its instructions list.
+- `templates/assessment-report.md` is the output template with severity-classified findings and linked Change Requests.
+- `Docs/assessment-workflow.md` is the comprehensive documentation for the Assessment workflow.
+- `Docs/framework-ai-enhancement-phase.md` includes the complete assessment lifecycle.
+- `templates/project-cache.md` now defines the cache schema for `PROJECT_CACHE.md`.
+- `Docs/project-cache-system.md` documents the full cache lifecycle and freshness rules.
+- `platforms/opencode/opencode.json` includes `PROJECT_CACHE.md` in its instructions list.
 - New documentation: `Docs/project-cache-system.md` describes the full system, lifecycle, freshness rules, and migration guide.
 - Implementation repurposed the PROJECT_CACHE.md work originally done in parkinson_apps.
 
@@ -72,7 +74,7 @@
 - `skills/analysis/SKILL.md` Mode 2, Step 8 generates or updates `PROJECT_CACHE.md` after Assessment approval. Sets stale date (Last Updated + 30 days).
 - `skills/change-intake/SKILL.md` Pre-Intake Check reads `PROJECT_CACHE.md` as the first context source. If stale (>30 days), asks user about re-assessment.
 - Cache lifecycle: **Fresh ≤30 days** → all skills skip scans (~1-2 tool calls for context vs ~8-12 without). **Stale >30 days** → warn user. **Invalidated** → fall back to full scan.
-- `Docs/assessment-workflow.md` documents the full cache lifecycle with Mermaid decision flow and impact metrics.
+- `Docs/project-cache-system.md` documents the full cache lifecycle with Mermaid decision flow and impact metrics.
 
 ## Git Hooks Deploy (2026-06-20)
 
@@ -110,41 +112,9 @@
 - The kickoff skill (Question #14) interviews the user with 4 diagnostic questions when architecture preference is unknown.
 - All shared skills (`kickoff`, `planning`, `analysis`, `design`, `specification`, `implementation`, `testing`, `review`) now have dual architecture paths.
 - All pattern conventions now include VSA project structures (e.g., `Features/`, `Shared/`, `Contracts/`) alongside CA structures.
-- All pattern skills (scaffold, feature, testing) now include pre-questions about architecture and dual procedure paths.
-- Pattern architect agents updated to recommend CA or VSA according to the project's choice.
 - VSA Key Rules: slices are self-contained, no cross-slice imports, shared kernel for cross-cutting concerns, contracts for cross-slice events.
 - See `Docs/vertical-slice-architecture.md` for the full list of affected files.
 
 ## Lifecycle Changes (2026-06-03)
 
 - Added `skills/kickoff/SKILL.md`: interactive onboarding, 5-block conversation, produces `PROJECT_INTAKE.md`.
-- Added `skills/planning/SKILL.md`: generates `PROJECT_PLAN.md` with Mermaid diagram, phase table (8 phases), milestone checklist, risk register.
-- Full lifecycle is now: Kickoff → Planning → Analysis → Design → Scaffold → Implementation → Testing → Review.
-- Scaffold is now an explicit lifecycle phase (was only a pattern-specific skill before).
-- Both `templates/povo.agent.md` and `templates/opencode/povo.agent.md` updated to reflect the 8-phase lifecycle and split workflow (new project vs. existing project).
-- Added `Docs/new-project-lifecycle.md` documenting the complete flow, artifact map, cross-platform table, cross-pattern table, and milestone checklist template.
-
-## Default Operating Procedure (2026-08-01)
-
-- PovoAgent now has a mandatory **Default Operating Procedure** encoded in all agent templates (`templates/*/povo.agent.md`) and platform instruction files (`platforms/*/`).
-- The procedure enforces: **Analyze → Plan → Interview (when ambiguous) → Execute** for every request, regardless of type or complexity.
-- **Analyze**: understand the request, gather context from project documents (cache, intake, specs) before acting.
-- **Plan**: outline the approach and get explicit user confirmation before modifying files.
-- **Interview**: ask clarifying questions when requirements are ambiguous, incomplete, or have multiple interpretations. Never guess.
-- **Execute**: only proceed after analysis is complete, the plan is approved, and ambiguities are resolved.
-- The four steps scale with request complexity but are always present — no step is ever skipped.
-
-## PovoDirect Agent — Legacy Direct Mode (2026-08-01)
-
-- Created **PovoDirect** as a companion agent (`povo-direct.agent.md`) that preserves legacy direct-execution behavior.
-- PovoDirect is identical to PovoAgent but without the mandatory "Default Operating Procedure" section.
-- Available in all three platform variants: standard (`templates/povo-direct.agent.md`), Codex (`templates/codex/povo-direct.agent.md`), OpenCode (`templates/opencode/povo-direct.agent.md`).
-- Use PovoDirect for: quick tasks, follow-ups, or when the user already has a clear plan and doesn't need procedural analysis.
-- Use PovoAgent (with DOP) for: complex or ambiguous work that benefits from Analyze → Plan → Interview → Execute.
-
-## Deploy Scripts — All *.agent.md Discovery (2026-08-01)
-
-- `deploy.ps1` and `deploy.sh` now deploy **all** `*.agent.md` files, not just `povo.agent.md`.
-- Step 2 and Step 6b use glob/file-filtering to discover and copy every `.agent.md` file in the source directory.
-- `.gitignore` entries are also generated dynamically from discovered agent files.
-- Future-proof: any new agent (e.g., `povo-direct.agent.md`) is automatically deployed without script changes.

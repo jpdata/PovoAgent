@@ -137,4 +137,4 @@ See `Docs/evolutionary-lifecycle.md` for the full workflow documentation.
 
 ## Memory
 
-- All corrections, lessons learned, and reusable knowledge must be recorded in the project memory file (`AGENTS.md`).
+- All corrections, lessons learned, and reusable knowledge must be recorded in the project memory file (`.github/project-memory.md`).

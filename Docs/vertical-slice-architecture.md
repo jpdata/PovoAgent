@@ -107,5 +107,5 @@ Kickoff Question #14: "¿Qué estilo de arquitectura prefieres?"
 - `angular/skills/angular-scaffold/SKILL.md`
 - `angular/skills/angular-feature/SKILL.md`
 - `angular/skills/angular-testing/SKILL.md`
-- `.github/copilot-memory.md`
+- `.github/project-memory.md`
 - `Docs/vertical-slice-architecture.md`

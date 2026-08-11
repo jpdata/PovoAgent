@@ -41,7 +41,7 @@ PovoAgent is a Framework AI wich is a compilation of agents, skills and necessar
 
 ## Memory File
 
-- Use `.github/copilot-memory.md` as the persistent memory file for this workspace.
+- Use `.github/project-memory.md` as the canonical persistent memory file for this workspace.
 - At the start of a task, read the memory file before making decisions that may depend on prior corrections or prior agreements.
 - Record user corrections that change previous assumptions, naming, scope, or workflow.
 - Record durable repository knowledge that should survive across sessions.

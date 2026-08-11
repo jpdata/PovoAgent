@@ -38,7 +38,7 @@ You are the repository-wide agent for the PovoAgent framework. Use this agent wh
 
 ## Memory
 
-- Read `.github/copilot-memory.md` before making scope-sensitive decisions.
+- Read `.github/project-memory.md` before making scope-sensitive decisions.
 - Record durable corrections, repository rules, and carry-over items after meaningful changes.
 
 ## Use Cases

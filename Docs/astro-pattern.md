@@ -36,5 +36,5 @@
 - `README.md`
 - `deploy.ps1`
 - `deploy.sh`
-- `.github/copilot-memory.md`
+- `.github/project-memory.md`
 - `Docs/astro-pattern.md`

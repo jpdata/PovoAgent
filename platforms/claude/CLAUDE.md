@@ -80,4 +80,4 @@ Refer to `templates/project-cache.md` for the cache schema. Skills that modify t
 
 ## Memory
 
-- All corrections, lessons learned, and reusable knowledge must be recorded in the project memory file.
+- All corrections, lessons learned, and reusable knowledge must be recorded in the project memory file (`.github/project-memory.md`).
