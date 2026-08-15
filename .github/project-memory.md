@@ -102,6 +102,16 @@
 - msix v3.18.0+ is critical for automatic VC++ Redist DLL bundling.
 - Documentation in `Docs/flutter-msix-installer.md`.
 
+## Flutter Riverpod ViewModel Pattern (2026-08-15)
+
+- New pattern skill `flutter/skills/flutter-riverpod-viewmodel/SKILL.md` — Riverpod 3.x + Codegen is the **default** state-management + DI pattern for Flutter. Covers dependency set, core rules, DI (repository + use-case providers), 7 ViewModel variants, provider naming, UI consumption, file organization, checklist, 2.x→3.x migration.
+- Bloc/Cubit is a **disabled-by-default sub-option** in the Flutter pattern — must be explicitly enabled by the user in the Design phase; never mix Riverpod and Bloc/Cubit for the same feature.
+- Legacy Riverpod providers (`StateProvider`, `StateNotifierProvider`, `ChangeNotifierProvider`) are forbidden in new code (Riverpod 3.x).
+- Use unified `Ref` in codegen — typed refs (`UsersRef`, `GetUsersRef`) are Riverpod 2.x style.
+- ViewModels/Notifiers never reference widgets; widgets only observe (`ref.watch`) and trigger (`ref.read(provider.notifier).method()`); async state uses `AsyncValue`.
+- Riverpod testing: `ProviderContainer.test()` for unit tests, `ProviderScope.overrides` for widget tests.
+- Affected files: new skill + `flutter/conventions.md` + 3 Flutter agents + `flutter-spec`, `flutter-testing`, `flutter-feature`, `flutter-scaffold` skills + `Docs/flutter-riverpod-viewmodel-pattern.md`. VERSION bumped to 0.5.0.
+
 ## Carry-Over
 
 - None.

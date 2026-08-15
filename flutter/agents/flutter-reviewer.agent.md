@@ -26,12 +26,18 @@ You are a Flutter code reviewer specialized in Clean Architecture compliance. Yo
 5. DI is handled via Riverpod's `ProviderScope` (default). `get_it` only in non-Riverpod projects.
 6. No manual instantiation of dependencies across layer boundaries.
 
-### Riverpod-Specific Checks (default)
-1. Providers use the correct variant: `@riverpod` for sync, `Future`/`Stream` return type for async.
-2. `ref.watch` is used for reactive reads; `ref.read` only in callbacks/event handlers.
-3. `ProviderScope` wraps the app root in `main.dart`.
-4. Provider overrides in tests use `ProviderScope.overrides`.
-5. No `ref.watch` inside `build` methods of non-widget classes (use `ref.read`).
+### Riverpod 3.x Checks (default)
+1. Providers use the correct variant from the `flutter-riverpod-viewmodel` skill: `@riverpod class X extends _$X` (AsyncNotifier/Notifier), `@riverpod Future/Stream<X> x(Ref ref, ...)` for read-only family data.
+2. **No legacy providers**: `StateProvider`, `StateNotifierProvider`, and `ChangeNotifierProvider` are forbidden in new code (Riverpod 3.x legacy).
+3. `ref.watch` is used for reactive reads; `ref.read` only in callbacks/event handlers.
+4. `ProviderScope` wraps the app root in `main.dart`.
+5. Provider overrides in tests use `ProviderScope.overrides` / `ProviderContainer.test()`.
+6. No `ref.watch` inside `build` methods of non-widget classes (use `ref.read`).
+7. ViewModels/Notifiers never reference widgets (no `BuildContext`, no `ScaffoldMessenger`, no external controller lifecycle).
+8. Widgets never write `state` directly — they call `ref.read(provider.notifier).method()`.
+9. Asynchronous state is modeled with `AsyncValue` and consumed with `.when()` / pattern matching.
+10. `Ref` is the unified type — typed refs (`UsersRef`, `GetUsersRef`) are Riverpod 2.x style and rejected.
+11. Bloc/Cubit is only used in projects where it was explicitly enabled in the Design phase; a project never mixes Riverpod and Bloc/Cubit for the same feature.
 
 ### Code Quality
 1. Files follow `snake_case.dart` naming.

@@ -15,7 +15,7 @@ argument-hint: 'Project name and main features'
 
 Ask the user **before starting** if any of these are undefined:
 - Architecture style: Clean Architecture or Vertical Slice Architecture? If not decided, refer to the kickoff diagnostic questions.
-- State management: `flutter_bloc`, `riverpod`, or `provider`?
+- State management: **Riverpod 3.x + Codegen by default** (no question needed). Bloc/Cubit is a **disabled-by-default sub-option** — only ask about it if the user explicitly mentions BLoC, and only enable it with explicit user approval in the Design phase.
 
 ## Procedure
 
@@ -49,17 +49,18 @@ Ask the user **before starting** if any of these are undefined:
    ```
 
 3. **Add core dependencies to `pubspec.yaml`**
-   - State management (ask user: `flutter_bloc`, `riverpod`, or `provider`)
-   - DI: `get_it` + `injectable`
+   - State management + DI (default): `flutter_riverpod`, `riverpod`, `riverpod_annotation`
+   - Code generation (default): `build_runner`, `riverpod_generator`, `freezed`, `json_serializable`
+   - BLoC/Cubit (`flutter_bloc`) only if explicitly enabled by the user in the Design phase
+   - DI (non-Riverpod only): `get_it` + `injectable`
    - Navigation: `go_router`
    - HTTP: `http` or `dio`
-   - Code generation: `freezed`, `json_serializable`, `build_runner`
 
 4. **Create base files**
    - `lib/core/constants/api_constants.dart` — API URLs and keys
    - `lib/core/theme/app_theme.dart` — App-wide theme definition
-   - `lib/core/utils/injection.dart` — DI container setup
-   - `lib/main.dart` — App entry point wiring DI and router
+   - `lib/main.dart` — App entry point wrapping the app in `ProviderScope` (Riverpod DI) and setting up the router
+   - If the project is explicitly non-Riverpod: `lib/core/utils/injection.dart` — DI container setup (`get_it` + `injectable`)
 
 5. **Create test mirrors**
    ```
@@ -112,8 +113,8 @@ Ask the user **before starting** if any of these are undefined:
 
 4. **Create base files**
    - `lib/shared/routing/app_router.dart` — App-level router
-   - `lib/shared/di/injection.dart` — Shared DI setup
-   - `lib/main.dart` — Composes all slice modules
+   - `lib/main.dart` — Composes all slice modules inside `ProviderScope` (Riverpod DI)
+   - If the project is explicitly non-Riverpod: `lib/shared/di/injection.dart` — Shared DI setup (`get_it` + `injectable`)
 
 5. **Create test mirrors**
    ```

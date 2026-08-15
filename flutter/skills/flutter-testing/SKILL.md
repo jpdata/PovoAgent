@@ -33,6 +33,32 @@ argument-hint: 'Feature or layer to test'
 3. File: `test/presentation/pages/<page>_test.dart`
 4. Use `pumpWidget` with mocked dependencies.
 
+### Riverpod Provider Tests (default state management)
+1. Unit-test ViewModels/Notifiers in isolation with `ProviderContainer.test()`.
+2. Override repository/use-case providers with `ProviderScope.overrides` (widget tests) or provider overrides in the container (unit tests).
+3. Assert `AsyncValue` states: `loading`, `data`, `error`.
+4. Trigger actions via `container.read(provider.notifier).method()` and assert state transitions.
+5. Verify subscriptions are cancelled on dispose (`ref.onDispose`).
+6. File: `test/presentation/viewmodels/<viewmodel>_test.dart` (CA) or `test/features/<feature>/viewmodels/<viewmodel>_test.dart` (VSA).
+
+```dart
+// test/presentation/viewmodels/users_viewmodel_test.dart
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+void main() {
+  test('loads users and exposes AsyncValue.data', () async {
+    final container = ProviderContainer(
+      overrides: [getUsersProvider.overrideWithValue(FakeGetUsers())],
+    );
+    addTearDown(container.dispose);
+
+    await container.read(usersViewModelProvider.future);
+    expect(container.read(usersViewModelProvider), isA<AsyncValue<List<User>>>());
+  });
+}
+```
+
 ### Integration Tests
 1. Place in `integration_test/` folder.
 2. Test full user flows across screens.
@@ -95,7 +121,8 @@ When the project uses VSA, tests follow the slice:
 #### Unit Tests (per ViewModel/Cubit)
 - Test ViewModel with a mocked repository.
 - File: `test/features/<feature>/viewmodels/<feature>_viewmodel_test.dart`
-- Verify state transitions (loading → data → error).
+- For Riverpod (default): use `ProviderContainer.test()` / overrides; verify `AsyncValue` transitions (loading → data → error).
+- For BLoC/Cubit (only if explicitly enabled): verify state transitions (loading → data → error) with `bloc_test`.
 
 #### Unit Tests (per repository)
 - Test repository implementation with a mocked API client.

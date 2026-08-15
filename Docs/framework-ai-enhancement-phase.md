@@ -29,6 +29,18 @@
 
 ## Documented Updates
 
+### 2026-08-15 - Flutter Riverpod ViewModel Pattern integrated
+
+- Created `flutter/skills/flutter-riverpod-viewmodel/SKILL.md` — the default state-management + DI pattern for Flutter: Riverpod 3.x + Codegen. Covers dependency set, core rules, DI (repository + use-case providers), the seven ViewModel variants (AsyncNotifier, Notifier, immutable state-class, FutureProvider family, StreamProvider family, combined providers, manual Notifier), generated provider naming, UI consumption, file organization, ViewModel checklist, Riverpod 2.x→3.x migration table, and a Bloc/Cubit disabled-by-default section.
+- Updated `flutter/conventions.md` — State Management rewritten: Riverpod 3.x + Codegen as the single state-management + DI mechanism, Bloc/Cubit as a **disabled-by-default sub-option**, legacy-provider ban, and updated packages table.
+- Updated `flutter/agents/flutter-developer.agent.md` — Riverpod 3.x codegen examples (`Ref` unified, `AsyncNotifier`, `AsyncValue`); typed refs flagged as 2.x style; legacy-provider ban; `ProviderContainer.test()`; updated checklist.
+- Updated `flutter/agents/flutter-reviewer.agent.md` — 11 Riverpod 3.x checks (no legacy providers, no external state writes, no typed refs, no widget refs in Notifiers, no Riverpod+Bloc mixing).
+- Updated `flutter/agents/flutter-architect.agent.md` — state management default is Riverpod 3.x + Codegen following the skill.
+- Updated `flutter/skills/flutter-spec/SKILL.md`, `flutter/skills/flutter-testing/SKILL.md`, `flutter/skills/flutter-feature/SKILL.md`, `flutter/skills/flutter-scaffold/SKILL.md` — Riverpod path is default; BLoC/Cubit moved to disabled-by-default sub-option; scaffold no longer asks for state management (Riverpod is default) and uses `ProviderScope` in `main.dart` for DI.
+- Created `Docs/flutter-riverpod-viewmodel-pattern.md` — full documentation of the pattern and integration.
+- Why: the Flutter pattern already named Riverpod as default but was inconsistent — code examples used 2.x syntax, `flutter-spec` was entirely BLoC-centric, and `flutter-scaffold` offered all state-management choices as equals. This makes Riverpod 3.x the unambiguous default and Bloc/Cubit an explicitly enabled sub-option, per user request.
+- Affected files: `flutter/skills/flutter-riverpod-viewmodel/SKILL.md`, `flutter/conventions.md`, `flutter/agents/flutter-developer.agent.md`, `flutter/agents/flutter-reviewer.agent.md`, `flutter/agents/flutter-architect.agent.md`, `flutter/skills/flutter-spec/SKILL.md`, `flutter/skills/flutter-testing/SKILL.md`, `flutter/skills/flutter-feature/SKILL.md`, `flutter/skills/flutter-scaffold/SKILL.md`, `Docs/flutter-riverpod-viewmodel-pattern.md`, `Docs/framework-ai-enhancement-phase.md`, `VERSION`, `.github/project-memory.md`.
+
 ### 2026-08-01 - Deploy scripts: deploy all *.agent.md files
 
 - Fixed `deploy.ps1` and `deploy.sh` to deploy **all** `*.agent.md` files from the template source directory, not just `povo.agent.md`.

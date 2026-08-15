@@ -44,6 +44,7 @@ argument-hint: 'Feature name and description'
    ```
    - ViewModel/Cubit depends on use case only, not on data sources.
    - Page observes ViewModel state.
+   - **State management default is Riverpod 3.x + Codegen** — follow the `flutter-riverpod-viewmodel` skill to pick the ViewModel variant (`AsyncNotifier` / `Notifier` / state class / read-only provider), declare repository + use-case `Provider`s, and add `part '<file>.g.dart';` + run `dart run build_runner build -d`. BLoC/Cubit is a disabled-by-default sub-option.
 
 5. **Register in DI container**
    - Register data source, repository implementation, use case, and ViewModel in `injection.dart`.
@@ -84,10 +85,11 @@ When the project uses VSA, create a feature folder that owns its full vertical s
    - API: HTTP calls scoped to this feature only at `data/<feature>_api.dart`.
    - Repository: implements data access; lives inside the feature, not in a shared `lib/data/` folder.
 
-3. **Create the ViewModel (Cubit/Bloc)**
+3. **Create the ViewModel (Riverpod 3.x default; Cubit/Bloc only if explicitly enabled)**
    - Depends on the feature's repository directly.
    - Owns the state for this slice: loading, data, error.
    - No separate use-case class — business logic lives in the ViewModel or a dedicated `services/` subfolder.
+   - Follow the `flutter-riverpod-viewmodel` skill: `@riverpod class X extends _$X` (AsyncNotifier/Notifier) with `AsyncValue` state; declare repository + use-case `Provider`s; add `part '<file>.g.dart';`.
 
 4. **Create the page and widgets**
    - Page observes ViewModel state via `BlocBuilder` or `context.watch`.

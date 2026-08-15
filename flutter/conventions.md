@@ -70,7 +70,7 @@ test/
 - **domain/** must contain only pure Dart. No Flutter imports (`import 'package:flutter/...'`) allowed.
 - **data/** implements interfaces defined in **domain/**. Never import from **presentation/**.
 - **presentation/** depends on **domain/** only through use cases or ViewModels. Never imports from **data/** directly.
-- **Dependency injection wires layers together via Riverpod's `ProviderScope` and overrides.** `get_it` + `injectable` are only used in non-Riverpod projects.
+- **Dependency injection wires layers together via Riverpod's `ProviderScope` and overrides.** Repositories and use cases are plain `Provider`s; use cases receive dependencies through the constructor and are wired with `ref.watch`. `get_it` + `injectable` are only used in non-Riverpod projects.
 
 ### Vertical Slice Architecture
 - **Each slice is self-contained.** A slice must not import another slice's widgets, viewmodels, or data sources directly.
@@ -94,7 +94,8 @@ These principles apply to both architectures:
 - **Repository:** All data access through abstract repositories in `domain/repositories/`, implemented in `data/repositories/`.
 - **Use Case / Interactor:** One class per business operation in `domain/usecases/`. Receives repositories via constructor.
 - **Dependency Injection:** Riverpod's `ProviderScope` handles DI natively. Use `overrideWith` in tests. For non-Riverpod projects, `get_it` + `injectable`.
-- **Observer:** State management (Riverpod providers / Bloc/Cubit) acts as the observer pattern for UI reactivity.
+- **Observer:** State management (Riverpod providers / Notifiers) acts as the observer pattern for UI reactivity.
+- **ViewModel:** Riverpod ViewModels follow the `flutter-riverpod-viewmodel` skill (AsyncNotifier / Notifier / state classes with `copyWith`). Bloc/Cubit is a disabled-by-default sub-option.
 - **Factory:** Use `freezed` or factory constructors for entities/DTOs with complex creation logic.
 - **Adapter:** Wrap external SDKs (Firebase, platform channels) behind interfaces in `data/datasources/`.
 
@@ -107,10 +108,15 @@ These principles apply to both architectures:
 
 ## State Management
 
-- Use **Riverpod** by default for state management and dependency injection.
-- `flutter_bloc` (Bloc/Cubit) is available as an alternative when explicitly chosen in the Design phase.
-- ViewModels/Notifiers must not contain widget references.
-- Widgets observe state via `ref.watch`, they do not manage it.
+- Use **Riverpod 3.x + Codegen** by default for state management and dependency injection. Follow the `flutter-riverpod-viewmodel` skill for all ViewModels and providers.
+- `flutter_bloc` (Bloc/Cubit) is a **disabled-by-default sub-option**: it is not part of the default pattern and must be explicitly enabled by the user in the Design phase.
+- Riverpod is the single state-management + DI mechanism. No `get_it`, no manual service locators. DI is wired through `ProviderScope` (and `overrides` in tests).
+- ViewModels/Notifiers must not contain widget references. No `BuildContext`, no `ScaffoldMessenger` inside a Notifier.
+- Widgets only observe and trigger: `ref.watch` to read state, `ref.read(provider.notifier).method()` to trigger actions. Widgets never mutate state directly.
+- All data access goes through use-case providers (`ref.read(xUseCaseProvider).call(...)`), never through repositories directly from widgets.
+- Asynchronous state is modeled with `AsyncValue` (loading/data/error) and switched on with `.when()` / pattern matching.
+- **Never** use `StateProvider`, `StateNotifierProvider`, or `ChangeNotifierProvider` in new code — they are legacy in Riverpod 3.x.
+- A project must never mix Riverpod and Bloc/Cubit for the same feature.
 
 ## Naming Conventions
 
@@ -129,17 +135,18 @@ These principles apply to both architectures:
 
 ## Common Packages
 
-| Purpose             | Package                        | Use/Priority                   |
-| ------------------- | ------------------------------ | ------------------------------ |
-| DI                  | `riverpod` (built-in)          | Default                        |
-| State management    | `riverpod`, `flutter_hooks`    | Default                        |
-| DI (alternative)    | `get_it`, `injectable`         | Only for non-Riverpod projects |
-| State (alternative) | `flutter_bloc`                 | Only if explicitly chosen      |
-| HTTP client         | `dio`, `http`                  | `http` > `dio`                 |
-| Navigation          | `go_router`, `auto_route`      | `go_router` > `auto_route`     |
-| Local storage       | `hive`, `shared_preferences`   | `shared_preferences` > `hive`  |
-| Testing mocks       | `mockito`, `mocktail`          | Ask                            |
-| Code generation     | `freezed`, `json_serializable` | Both                           |
+| Purpose             | Package                                                     | Use/Priority                                                          |
+| ------------------- | ----------------------------------------------------------- | --------------------------------------------------------------------- |
+| DI                  | `riverpod` (built-in)                                       | Default                                                               |
+| State management    | `flutter_riverpod`, `riverpod`                              | Default (Riverpod 3.x)                                                |
+| Codegen (Riverpod)  | `riverpod_annotation`, `riverpod_generator`, `build_runner` | Default                                                               |
+| DI (alternative)    | `get_it`, `injectable`                                      | Only for non-Riverpod projects                                        |
+| State (alternative) | `flutter_bloc`                                              | Disabled-by-default sub-option — only if explicitly enabled in Design |
+| HTTP client         | `dio`, `http`                                               | `http` > `dio`                                                        |
+| Navigation          | `go_router`, `auto_route`                                   | `go_router` > `auto_route`                                            |
+| Local storage       | `hive`, `shared_preferences`                                | `shared_preferences` > `hive`                                         |
+| Testing mocks       | `mockito`, `mocktail`                                       | Ask                                                                   |
+| Code generation     | `freezed`, `json_serializable`, `riverpod_generator`        | Both + Riverpod                                                       |
 
 ## Package Version Selection
 

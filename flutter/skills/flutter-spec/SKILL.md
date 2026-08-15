@@ -1,7 +1,7 @@
 ---
 name: flutter-spec
-description: 'Translates the Flutter Design Document into formal Specification Documents for BLoC/Cubit events and states, use cases, repositories, and widgets. Maps each spec scenario to flutter_test and bloc_test patterns. Use after Design and before Implementation in Flutter projects.'
-argument-hint: 'Feature, BLoC, or widget name to specify'
+description: 'Translates the Flutter Design Document into formal Specification Documents for Riverpod ViewModels/Notifiers (default) or BLoC/Cubit events and states, use cases, repositories, and widgets. Maps each spec scenario to flutter_test and Riverpod provider-test patterns. Use after Design and before Implementation in Flutter projects.'
+argument-hint: 'Feature, ViewModel, BLoC, or widget name to specify'
 ---
 
 # Flutter Specification
@@ -20,17 +20,22 @@ argument-hint: 'Feature, BLoC, or widget name to specify'
 | Use case | Domain / Application | Single-responsibility business logic, input→output, error types |
 | Repository contract | Domain | Abstract interface: method signatures, return types (`Either<Failure, T>`) |
 | Repository implementation | Data | Actual data source calls, error mapping to `Failure` types |
-| BLoC / Cubit | Presentation | Event→State transitions, error state, loading state |
-| Widget (page / feature) | Presentation | Rendered output per BLoC state, user interactions |
+| Riverpod ViewModel / Notifier (default) | Presentation | `AsyncValue` states (loading/data/error), public action methods, provider variant |
+| BLoC / Cubit (disabled-by-default sub-option) | Presentation | Event→State transitions, error state, loading state |
+| Widget (page / feature) | Presentation | Rendered output per state, user interactions |
+
+> **State management default:** Riverpod 3.x + Codegen following the
+> `flutter-riverpod-viewmodel` skill. BLoC/Cubit is only specified when it was
+> explicitly enabled in the Design phase.
 
 ## Workflow
 
-1. Read the Flutter Design Document (Clean Architecture layers, BLoC events/states, API contracts).
-2. Identify all use cases, BLoC/Cubits, repositories, and key widgets that need a spec.
+1. Read the Flutter Design Document (Clean Architecture layers, ViewModel/BLoC design, API contracts).
+2. Identify all use cases, ViewModels/BLoCs, repositories, and key widgets that need a spec.
 3. Apply the base `specification` skill workflow — one `SPEC_<Name>.md` per unit.
 4. Enrich each spec with the Flutter-specific fields below.
-5. Map each scenario to a `bloc_test` or `flutter_test` pattern.
-6. Verify every BLoC spec covers `Initial`, `Loading`, `Success`, and `Failure` states.
+5. Map each scenario to a `flutter_test` / Riverpod provider-test pattern (default) or `bloc_test` pattern (only if BLoC was enabled).
+6. Verify every ViewModel spec covers `AsyncValue` loading, data, and error states (or `Initial`, `Loading`, `Success`, `Failure` for BLoC).
 7. Verify every use-case spec covers the success path and each failure type.
 
 ## Flutter-Specific Spec Fields
@@ -45,9 +50,25 @@ Add the following section to each spec in a Flutter project:
 - [ ] Use case (returns `Either<Failure, T>` or `Result<T>`)
 - [ ] Repository contract (abstract class)
 - [ ] Repository implementation (data layer)
-- [ ] BLoC (event-driven)
-- [ ] Cubit (method-driven)
+- [ ] Riverpod ViewModel / Notifier (`@riverpod class X extends _$X` — AsyncNotifier or Notifier) [default]
+- [ ] Riverpod read-only provider (`@riverpod Future/Stream<X> x(Ref ref, ...)`) [default]
+- [ ] BLoC (event-driven) / Cubit (method-driven) [only if explicitly enabled in Design]
 - [ ] Widget (page or feature component)
+
+### Riverpod ViewModel → AsyncValue State Map [default]
+| Action / Method | Initial State | Expected Next State(s) |
+|---|---|---|
+| `build()` (async) | `AsyncValue.loading()` | `AsyncValue.data(...)` or `AsyncValue.error(e, stack)` |
+| `createX(x)` | `AsyncValue.data(list)` | `AsyncValue.data(updatedList)` or `AsyncValue.error` |
+| `refresh()` | `AsyncValue.loading()` | `AsyncValue.data(...)` or `AsyncValue.error(e, stack)` |
+
+- Provider variant (Section 4 of the `flutter-riverpod-viewmodel` skill):
+  - Async + reactive → `AsyncNotifier`
+  - Sync/simple → `Notifier`
+  - Form/draft → `Notifier` + immutable state class + `copyWith`
+  - Read-only family data → `@riverpod Future/Stream<X> x(Ref ref, ...)`
+- Cleanup: subscriptions cancelled in `ref.onDispose`; controllers disposed in `ref.onDispose`.
+- UI never writes `state` — actions are public methods on the Notifier.
 
 ### BLoC / Cubit Event → State Map
 | Event / Method | Initial State | Expected Next State(s) |
@@ -63,39 +84,51 @@ Add the following section to each spec in a Flutter project:
 ```
 
 ### Widget State Scenarios
-| BLoC State | Expected Widget Output |
+| State | Expected Widget Output |
 |---|---|
-| `XxxInitial` | Empty / placeholder shown |
-| `XxxLoading` | `CircularProgressIndicator` or skeleton |
-| `XxxLoaded` | Data widgets rendered with correct values |
-| `XxxError` | Error message widget with retry option |
+| `AsyncValue.loading()` / `XxxLoading` | `CircularProgressIndicator` or skeleton |
+| `AsyncValue.data(...)` / `XxxLoaded` | Data widgets rendered with correct values |
+| `AsyncValue.error(...)` / `XxxError` | Error message widget with retry option |
+| `XxxInitial` (BLoC only) | Empty / placeholder shown |
 
-### bloc_test / flutter_test Pattern Reference
+### flutter_test / Riverpod Provider-Test Pattern Reference [default]
+| Scenario | Test Approach |
+|---|---|
+| Notifier build success | `ProviderContainer.test()`, read provider, assert `AsyncValue.data` |
+| Notifier build failure | Override repository/use-case provider to throw, assert `AsyncValue.error` |
+| Action method | Read `provider.notifier`, call method, assert state transition |
+| Use case success | Mock repo, call `useCase(params)`, assert `Right(result)` |
+| Use case failure | Mock repo returns `Left(Failure())`, assert correct `Failure` type |
+| Widget render | `pumpWidget` with `ProviderScope(overrides: [...])` providing mocked providers |
+| Widget interaction | `tap(find.byKey(...))`, `pumpAndSettle()`, assert action called on notifier |
+
+### bloc_test / flutter_test Pattern Reference [BLoC only — disabled-by-default sub-option]
 | Scenario | Test Approach |
 |---|---|
 | BLoC event success | `blocTest<XxxBloc, XxxState>`, `act: (b) => b.add(LoadXxx())`, `expect: [XxxLoading(), XxxLoaded(data)]` |
 | BLoC event failure | Same pattern, mock repo to throw/return `Left(Failure())` |
-| Use case success | Mock repo, call `useCase(params)`, assert `Right(result)` |
-| Use case failure | Mock repo returns `Left(Failure())`, assert correct `Failure` type |
 | Widget render | `pumpWidget` with `BlocProvider` providing mock BLoC, `find.byType / find.text` |
 | Widget interaction | `tap(find.byKey(...))`, `pumpAndSettle()`, assert BLoC event added |
 ````
 
 ## Acceptance Criteria (Flutter-specific additions)
 
-- [ ] Every BLoC spec maps all events to all reachable states.
+- [ ] Every Riverpod ViewModel spec covers `AsyncValue` loading, data, and error states (default).
+- [ ] Every Riverpod ViewModel spec names the provider variant and its generated provider name.
+- [ ] Every BLoC spec maps all events to all reachable states (only in BLoC-enabled projects).
 - [ ] Every use case spec lists all `Failure` subtypes that the use case can return.
-- [ ] Every widget spec covers all BLoC states the widget reacts to.
+- [ ] Every widget spec covers all states the widget reacts to (`AsyncValue` states by default).
 - [ ] Repository contract specs define return types as `Either<Failure, T>` or equivalent.
 - [ ] Domain entity specs verify `Equatable` props and any factory validation.
 
 ## Tool References
 
 - **Testing:** `flutter_test` (built-in)
-- **BLoC testing:** `bloc_test` package
+- **Riverpod testing (default):** `ProviderContainer.test()` (from `riverpod`) and `ProviderScope.overrides`
+- **BLoC testing:** `bloc_test` package (only in BLoC-enabled projects)
 - **Mocking:** `mocktail` or `mockito`
 - **Functional types:** `dartz` (`Either<L, R>`) or `fpdart`
-- **Dependency injection:** `get_it` + `injectable`
+- **Dependency injection:** Riverpod `ProviderScope` (default); `get_it` + `injectable` only for non-Riverpod projects
 
 ## Pattern Reference
 

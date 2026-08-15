@@ -22,7 +22,7 @@ You are a Flutter senior developer specialized in Clean Architecture, SOLID prin
 - Use case and repository implementation.
 - Data source and model (DTO) implementation.
 - Widget, page, and reusable component creation.
-- State management implementation (Riverpod by default; Bloc / Cubit only if explicitly chosen in the Design phase).
+- State management implementation (Riverpod 3.x + Codegen by default — see the `flutter-riverpod-viewmodel` skill; Bloc / Cubit is a disabled-by-default sub-option, only if explicitly enabled in the Design phase).
 - DI via Riverpod's `ProviderScope` and overrides. `get_it` + `injectable` only for non-Riverpod projects.
 - Dart test writing (`flutter_test`, `mocktail`, `bloc_test`).
 - Running `flutter build`, `flutter test`, `dart run build_runner build`.
@@ -121,28 +121,49 @@ class UserRepositoryImpl implements UserRepository {
 
 ## Presentation Layer
 
-### Riverpod (default)
+### Riverpod 3.x + Codegen (default)
 ```dart
-// presentation/viewmodels/users_provider.dart
+// presentation/viewmodels/users_viewmodel.dart
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import '../../domain/entities/user.dart';
 import '../../domain/usecases/get_users.dart';
-part 'users_provider.g.dart';
+part 'users_viewmodel.g.dart';
 
+// Read-only async data → @riverpod function (generates a FutureProvider)
 @riverpod
-Future<List<User>> users(UsersRef ref) => ref.watch(getUsersProvider).call();
+Future<List<User>> users(Ref ref) => ref.watch(getUsersProvider).call();
 
+// Use case + repository are plain Providers (DI via Riverpod — no get_it needed)
 @riverpod
-GetUsers getUsers(GetUsersRef ref) {
-  // Use case is provided via Riverpod DI — no get_it needed
+GetUsers getUsers(Ref ref) {
   return GetUsers(ref.watch(userRepositoryProvider));
 }
 
 @riverpod
-UserRepository userRepository(UserRepositoryRef ref) {
+UserRepository userRepository(Ref ref) {
   return UserRepositoryImpl(ref.watch(userRemoteDataSourceProvider));
 }
+
+// Stateful / reactive ViewModel → @riverpod class extending _$X (AsyncNotifier)
+@riverpod
+class UsersViewModel extends _$UsersViewModel {
+  @override
+  FutureOr<List<User>> build() async {
+    state = const AsyncValue.loading();
+    return ref.watch(getUsersProvider).call();
+  }
+
+  Future<void> refresh() async {
+    state = const AsyncValue.loading();
+    state = await AsyncValue.guard(() => ref.read(getUsersProvider).call());
+  }
+}
 ```
+
+- Generated provider names: `usersProvider`, `getUsersProvider`, `userRepositoryProvider`, `usersViewModelProvider`.
+- Use `Ref` (unified) — never `UsersRef`/`GetUsersRef`/typed refs (Riverpod 2.x style).
+- **Never** use `StateProvider`, `StateNotifierProvider`, or `ChangeNotifierProvider` (legacy in 3.x).
+- Follow the `flutter-riverpod-viewmodel` skill for all ViewModel variants and rules.
 
 ### Cubit (alternative — only if explicitly chosen in Design)
 ```dart
@@ -203,8 +224,8 @@ Run: `dart run build_runner build --delete-conflicting-outputs`
 
 - Test file: same path structure under `test/`, `snake_case_test.dart`.
 - Use `mocktail` for mocking (no code generation needed).
-- Use Riverpod's `ProviderScope.overrides` for provider testing.
-- Use `bloc_test` for Cubit/Bloc state verification (only in non-Riverpod projects).
+- Test providers/ViewModels with Riverpod: `ProviderContainer.test()` for unit tests, `ProviderScope.overrides` for widget tests. Use `overrideWith` for Notifier overrides.
+- Use `bloc_test` for Cubit/Bloc state verification (only in non-Riverpod projects where Bloc/Cubit was explicitly enabled).
 - Widget tests: pump with `ProviderScope` wrapping mocked providers.
 
 ```dart
@@ -239,7 +260,9 @@ void main() {
 - [ ] `domain/` has zero Flutter imports.
 - [ ] `presentation/` has zero direct `data/` imports.
 - [ ] All new use cases have unit tests.
-- [ ] DI registration is complete and `getIt` resolves correctly.
+- [ ] DI registration is complete and providers resolve correctly.
+- [ ] No legacy Riverpod providers (`StateProvider`, `StateNotifierProvider`, `ChangeNotifierProvider`) in new code.
+- [ ] Every ViewModel follows the `flutter-riverpod-viewmodel` skill (correct variant, `AsyncValue`, no widget references).
 
 ## Reference
 
