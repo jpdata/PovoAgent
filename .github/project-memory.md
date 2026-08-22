@@ -121,7 +121,7 @@
 - Models are `.spy.yaml` files; `serverpod generate` emits `lib/src/generated/` + client code; `serverpod create-migration` handles schema changes.
 - Generated client is consumed only in the Flutter `data/` layer behind repositories; `domain/` stays pure Dart; never call `client.*` from widgets/ViewModels.
 - Updated: `flutter/conventions.md` (Backend section + packages table), 3 Flutter agents, `flutter-scaffold`, `flutter-feature`, `flutter-spec`, `flutter-testing` skills, `skills/kickoff/SKILL.md`.
-- Doc: `Docs/flutter-serverpod-pattern.md`. VERSION bumped 0.5.1 → 0.6.0.
+- Doc: `Docs/flutter-serverpod-pattern.md`. VERSION bumped 0.5.1 → 0.6.1.
 
 ## Carry-Over
 

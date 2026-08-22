@@ -51,7 +51,7 @@ UI.
 | `flutter/agents/flutter-reviewer.agent.md`  | **Updated** — Serverpod review checks (stateless endpoints, typed signatures, `generated/` untouched, client behind repositories)                                                  |
 | `skills/kickoff/SKILL.md`                   | **Updated** — Backend question (Serverpod vs external API vs none) added to the Flutter technology question                                                                        |
 | `Docs/framework-ai-enhancement-phase.md`    | **Updated** — Added entry for this change                                                                                                                                          |
-| `VERSION`                                   | **Updated** — Bumped to 0.6.0                                                                                                                                                      |
+| `VERSION`                                   | **Updated** — Bumped to 0.6.1                                                                                                                                                      |
 | `.github/project-memory.md`                 | **Updated** — Added Serverpod section                                                                                                                                              |
 
 ## Key Rules of the Pattern
