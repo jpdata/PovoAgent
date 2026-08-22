@@ -115,6 +115,53 @@ When the project uses VSA, create a feature folder that owns its full vertical s
 - `lib/contracts/` defines shared event types and interfaces for cross-slice communication.
 - No feature imports from another feature.
 
+## Serverpod Backend
+
+When the project uses **Serverpod** as the backend (see the `flutter-serverpod`
+skill), implement the backend side of a feature in the `<project>_server`
+package alongside the Flutter code:
+
+1. **Define the model** (if the feature persists data)
+   ```yaml
+   # <project>_server/lib/src/models/<feature>.spy.yaml
+   class: <Feature>
+   table: <features>
+   fields:
+     # ... fields with their Dart types
+   ```
+
+2. **Create / extend the endpoint**
+   ```dart
+   // <project>_server/lib/src/endpoints/<feature>_endpoint.dart
+   import 'package:serverpod/serverpod.dart';
+   import 'package:<project>_server/src/generated/protocol.dart';
+
+   class <Feature>Endpoint extends Endpoint {
+     Future<<Feature>> create<Feature>(Session session, <Feature> item) async {
+       return <Feature>.db.insertRow(session, item);
+     }
+
+     Future<List<<Feature>>> list<Feature>s(Session session) async {
+       return <Feature>.db.find(session);
+     }
+   }
+   ```
+
+3. **Generate code + migration**
+   ```bash
+   cd <project>_server
+   serverpod generate
+   serverpod create-migration   # only when the schema changed
+   ```
+
+4. **Call from the Flutter data layer** — update the feature's remote data
+   source to call the generated client method (`client.<feature>.<method>(...)`),
+   behind the repository as usual. Never call `client.*` from widgets or
+   ViewModels.
+
+5. **Server tests** — add `withServerpod` tests in `<project>_server/test/`
+   (see the `flutter-testing` skill).
+
 ## Decoupling Checklist
 
 **Clean Architecture:**

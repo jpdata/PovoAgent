@@ -112,6 +112,17 @@
 - Riverpod testing: `ProviderContainer.test()` for unit tests, `ProviderScope.overrides` for widget tests.
 - Affected files: new skill + `flutter/conventions.md` + 3 Flutter agents + `flutter-spec`, `flutter-testing`, `flutter-feature`, `flutter-scaffold` skills + `Docs/flutter-riverpod-viewmodel-pattern.md`. VERSION bumped to 0.5.0.
 
+## Flutter Serverpod Backend (2026-08-22)
+
+- New pattern skill `flutter/skills/flutter-serverpod/SKILL.md` — Serverpod as an **opt-in backend sub-option** of the Flutter pattern, enabling a single-language (Dart) full-stack environment.
+- Activation: kickoff/design asks the backend question (Serverpod vs external API vs none) when Flutter is selected. Only enabled when explicitly selected.
+- `serverpod create <name>` produces a Dart pub workspace: `<name>_server/`, `<name>_client/`, `<name>_flutter/`.
+- Backend structure is a user choice (per the `flutter-serverpod` skill): idiomatic Serverpod, Clean Architecture, or Vertical Slice Architecture inside the server.
+- Models are `.spy.yaml` files; `serverpod generate` emits `lib/src/generated/` + client code; `serverpod create-migration` handles schema changes.
+- Generated client is consumed only in the Flutter `data/` layer behind repositories; `domain/` stays pure Dart; never call `client.*` from widgets/ViewModels.
+- Updated: `flutter/conventions.md` (Backend section + packages table), 3 Flutter agents, `flutter-scaffold`, `flutter-feature`, `flutter-spec`, `flutter-testing` skills, `skills/kickoff/SKILL.md`.
+- Doc: `Docs/flutter-serverpod-pattern.md`. VERSION bumped 0.5.1 → 0.6.0.
+
 ## Carry-Over
 
 - None.

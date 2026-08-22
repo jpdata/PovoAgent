@@ -118,6 +118,41 @@ These principles apply to both architectures:
 - **Never** use `StateProvider`, `StateNotifierProvider`, or `ChangeNotifierProvider` in new code — they are legacy in Riverpod 3.x.
 - A project must never mix Riverpod and Bloc/Cubit for the same feature.
 
+## Backend (Serverpod)
+
+Serverpod is an **opt-in backend sub-option** of the Flutter pattern. When the
+user selects Flutter and needs a backend, kickoff/design offers three choices:
+**Serverpod (Dart full-stack)**, **external REST/GraphQL API**, or **no
+backend**. Serverpod is only enabled when explicitly selected.
+
+- **Single language:** models, endpoints, and database access on the server,
+  plus a generated Dart client consumed by the Flutter app — all in Dart.
+- **Workspace layout:** `serverpod create <name>` produces a Dart pub workspace
+  with `<name>_server/`, `<name>_client/`, and `<name>_flutter/`.
+- **Backend structure** (user chooses in the Design phase, per the
+  `flutter-serverpod` skill):
+  - **Idiomatic Serverpod** — `lib/src/endpoints/` + `lib/src/models/`.
+  - **Clean Architecture** — layer-first (`domain/`, `data/`, `presentation/`)
+    inside the server.
+  - **Vertical Slice Architecture** — feature-first (`features/<feature>/`)
+    inside the server.
+- **Client integration:** the generated client is consumed only in the Flutter
+  `data/` layer behind repositories. `domain/` stays pure Dart. Never call
+  `client.*` from widgets or ViewModels.
+- **Codegen:** `serverpod generate` after model/endpoint changes;
+  `serverpod create-migration` after schema-affecting model changes.
+- Follow the `flutter-serverpod` skill for all backend work.
+
+### Serverpod Decoupling Rules
+
+- Server `generated/` code is never hand-edited.
+- When the backend uses Clean Architecture, the server `domain/` must not import
+  `serverpod` or generated protocol types.
+- When the backend uses VSA, server slices are self-contained; cross-slice
+  communication goes through shared kernel types or events.
+- The Flutter app talks to the server only through the generated client, behind
+  repositories — never through raw HTTP calls.
+
 ## Naming Conventions
 
 - Files: `snake_case.dart`
@@ -147,6 +182,10 @@ These principles apply to both architectures:
 | Local storage       | `hive`, `shared_preferences`                                | `shared_preferences` > `hive`                                         |
 | Testing mocks       | `mockito`, `mocktail`                                       | Ask                                                                   |
 | Code generation     | `freezed`, `json_serializable`, `riverpod_generator`        | Both + Riverpod                                                       |
+| Backend (Serverpod) | `serverpod`                                                 | Opt-in full-stack Dart backend (server)                               |
+| Backend client      | `serverpod_flutter` (+ generated `<project>_client`)        | Opt-in — generated client consumed in the data layer                  |
+| Backend CLI         | `serverpod_cli`                                             | Opt-in — `dart pub global activate serverpod_cli`                     |
+| Backend testing     | `serverpod_test`                                            | Opt-in — `withServerpod` server tests                                 |
 
 ## Package Version Selection
 

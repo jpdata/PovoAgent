@@ -64,6 +64,32 @@ void main() {
 2. Test full user flows across screens.
 3. Use `IntegrationTestWidgetsFlutterBinding`.
 
+### Serverpod Tests (backend)
+
+When the project uses **Serverpod** (see the `flutter-serverpod` skill), test
+the backend in `<project>_server/test/`:
+
+1. Run server tests with `serverpod test` (spins up a test database + server).
+2. Use the `withServerpod` helper from `package:serverpod_test/serverpod_test.dart`.
+3. Test endpoints (call `endpoints.<feature>.<method>`), models (serialization
+   round-trip), and database access (`<Model>.db` operations).
+4. File: `<project>_server/test/<feature>_endpoint_test.dart`.
+5. Flutter-side repository tests mock the generated client — never hit a real
+   server in widget/unit tests.
+
+```dart
+// <project>_server/test/recipe_endpoint_test.dart
+import 'package:serverpod_test/serverpod_test.dart';
+
+void main() {
+  withServerpod('given recipe when create then persists',
+      (session, endpoints) async {
+    final created = await endpoints.recipe.createRecipe(session, /* ... */);
+    expect(created.id, isNotNull);
+  });
+}
+```
+
 ## Decoupling Validation
 
 **Clean Architecture:**
@@ -107,6 +133,13 @@ void main() {
    Expected: all contract tests pass.
 
 4. **Slice independence**: Swap a page widget in one slice and confirm other slices' tests still pass.
+
+**Serverpod:**
+1. **Generated code untouched**: Verify no hand edits under the server's
+   `lib/src/generated/` — all changes come from `serverpod generate`.
+2. **Client behind repositories**: Verify the Flutter app calls the server only
+   through the generated client inside `data/` data sources, never directly
+   from widgets or ViewModels.
 
 ### Coverage
 ```bash

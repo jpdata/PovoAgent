@@ -29,6 +29,17 @@
 
 ## Documented Updates
 
+### 2026-08-22 - Flutter Serverpod backend sub-option integrated
+
+- Created `flutter/skills/flutter-serverpod/SKILL.md` — Serverpod as an **opt-in backend sub-option** of the Flutter pattern, enabling a single-language (Dart) full-stack environment. Covers prerequisites, CLI install, `serverpod create` workspace layout (`_server`, `_client`, `_flutter`), local run commands, three backend structure options (idiomatic Serverpod, Clean Architecture, Vertical Slice Architecture), models (`.spy.yaml`), endpoints, migrations, generated-client integration into the Flutter data layer, and Serverpod testing.
+- Updated `flutter/conventions.md` — added a "Backend (Serverpod)" section (single language, workspace layout, three backend structures, client integration rules, codegen commands, decoupling rules) and four Serverpod rows in the Common Packages table.
+- Updated `flutter/skills/flutter-scaffold/SKILL.md`, `flutter/skills/flutter-feature/SKILL.md`, `flutter/skills/flutter-spec/SKILL.md`, `flutter/skills/flutter-testing/SKILL.md` — route through the Serverpod pattern when the backend option is enabled.
+- Updated `flutter/agents/flutter-architect.agent.md`, `flutter/agents/flutter-developer.agent.md`, `flutter/agents/flutter-reviewer.agent.md` — backend design, endpoint/model implementation, and Serverpod review checks respectively.
+- Updated `skills/kickoff/SKILL.md` — backend question (Serverpod vs external API vs none) added when Flutter is selected.
+- Created `Docs/flutter-serverpod-pattern.md` — full documentation of the pattern and integration.
+- Why: the Flutter pattern previously assumed an external backend (`http`/`dio`). Serverpod lets Flutter be full-stack in a single language (Dart) with generated client code, eliminating hand-written serialization and language context-switching. Per user request, the backend structure is a user choice between idiomatic Serverpod, Clean Architecture, and Vertical Slice Architecture.
+- Affected files: `flutter/skills/flutter-serverpod/SKILL.md`, `flutter/conventions.md`, `flutter/skills/flutter-scaffold/SKILL.md`, `flutter/skills/flutter-feature/SKILL.md`, `flutter/skills/flutter-spec/SKILL.md`, `flutter/skills/flutter-testing/SKILL.md`, `flutter/agents/flutter-architect.agent.md`, `flutter/agents/flutter-developer.agent.md`, `flutter/agents/flutter-reviewer.agent.md`, `skills/kickoff/SKILL.md`, `Docs/flutter-serverpod-pattern.md`, `Docs/framework-ai-enhancement-phase.md`, `VERSION`, `.github/project-memory.md`.
+
 ### 2026-08-15 - Flutter Riverpod ViewModel Pattern integrated
 
 - Created `flutter/skills/flutter-riverpod-viewmodel/SKILL.md` — the default state-management + DI pattern for Flutter: Riverpod 3.x + Codegen. Covers dependency set, core rules, DI (repository + use-case providers), the seven ViewModel variants (AsyncNotifier, Notifier, immutable state-class, FutureProvider family, StreamProvider family, combined providers, manual Notifier), generated provider naming, UI consumption, file organization, ViewModel checklist, Riverpod 2.x→3.x migration table, and a Bloc/Cubit disabled-by-default section.

@@ -23,6 +23,8 @@ argument-hint: 'Feature, ViewModel, BLoC, or widget name to specify'
 | Riverpod ViewModel / Notifier (default) | Presentation | `AsyncValue` states (loading/data/error), public action methods, provider variant |
 | BLoC / Cubit (disabled-by-default sub-option) | Presentation | Event→State transitions, error state, loading state |
 | Widget (page / feature) | Presentation | Rendered output per state, user interactions |
+| Serverpod model (`.spy.yaml`) | Backend (Serverpod) | `class:` / `table:` / `fields:`, field types, serialization |
+| Serverpod endpoint | Backend (Serverpod) | Method signatures (`Session`, typed `Future`/`Stream`), stateless behavior, error types |
 
 > **State management default:** Riverpod 3.x + Codegen following the
 > `flutter-riverpod-viewmodel` skill. BLoC/Cubit is only specified when it was
@@ -111,6 +113,46 @@ Add the following section to each spec in a Flutter project:
 | Widget interaction | `tap(find.byKey(...))`, `pumpAndSettle()`, assert BLoC event added |
 ````
 
+## Serverpod Specification Fields
+
+Add the following to each spec when the project uses **Serverpod** (see the
+`flutter-serverpod` skill):
+
+````markdown
+## Serverpod Implementation Hints
+
+### Unit Type
+- [ ] Serverpod model (`.spy.yaml` file: `class:`, optional `table:`, `fields:`)
+- [ ] Serverpod endpoint (class extends `Endpoint`)
+
+### Model Spec
+| Field | Type | Required | DB Column (when `table:` set) |
+|---|---|---|---|
+| `id` | `int?` | auto | primary key |
+| `<field>` | `<Dart type>` | yes/no | `<column>` |
+
+- Serialization is generated — verify `serverpod generate` produces
+  `lib/src/generated/<model>.dart` and the client type.
+
+### Endpoint Spec
+| Method | Signature | Returns | Stateless? | Error types |
+|---|---|---|---|---|
+| `create<Feature>` | `(Session session, <Feature> item)` | `Future<<Feature>>` | yes | `ServerpodException` |
+| `list<Feature>s` | `(Session session)` | `Future<List<<Feature>>>` | yes | `ServerpodException` |
+
+- First parameter is always `Session session`.
+- Return type is `Future<T>`/`Stream<T>` with a serializable `T`.
+- No global/static state; each method is a sub-second unit of work.
+
+### Server Test Mapping
+| Scenario | Test Approach |
+|---|---|
+| Endpoint success | `withServerpod(...)` in `<project>_server/test/`, call `endpoints.<feature>.<method>` |
+| Endpoint failure | Same helper, arrange failing precondition, assert exception/error |
+| Model round-trip | Insert via `endpoints`, read back, assert field equality |
+| DB persistence | `withServerpod` + `Model.db.find/insertRow`, assert persisted row |
+````
+
 ## Acceptance Criteria (Flutter-specific additions)
 
 - [ ] Every Riverpod ViewModel spec covers `AsyncValue` loading, data, and error states (default).
@@ -120,6 +162,8 @@ Add the following section to each spec in a Flutter project:
 - [ ] Every widget spec covers all states the widget reacts to (`AsyncValue` states by default).
 - [ ] Repository contract specs define return types as `Either<Failure, T>` or equivalent.
 - [ ] Domain entity specs verify `Equatable` props and any factory validation.
+- [ ] Every Serverpod endpoint spec names each method's `Session` parameter, typed `Future`/`Stream` return, and stateless behavior (only in Serverpod projects).
+- [ ] Every Serverpod model spec lists the `class:` / `table:` / `fields:` definitions and field types (only in Serverpod projects).
 
 ## Tool References
 

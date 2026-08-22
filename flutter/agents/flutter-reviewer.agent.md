@@ -1,5 +1,5 @@
 ---
-description: 'Flutter code reviewer. Use when reviewing Flutter/Dart code for decoupling violations, architecture compliance, naming conventions, or best practices. Validates that domain has no Flutter imports, data does not import presentation, and presentation does not import data directly.'
+description: 'Flutter code reviewer. Use when reviewing Flutter/Dart code (frontend and Serverpod backend) for decoupling violations, architecture compliance, naming conventions, or best practices. Validates that domain has no Flutter imports, data does not import presentation, and presentation does not import data directly.'
 tools: [read, search]
 ---
 
@@ -38,6 +38,15 @@ You are a Flutter code reviewer specialized in Clean Architecture compliance. Yo
 9. Asynchronous state is modeled with `AsyncValue` and consumed with `.when()` / pattern matching.
 10. `Ref` is the unified type — typed refs (`UsersRef`, `GetUsersRef`) are Riverpod 2.x style and rejected.
 11. Bloc/Cubit is only used in projects where it was explicitly enabled in the Design phase; a project never mixes Riverpod and Bloc/Cubit for the same feature.
+
+### Serverpod Checks (only in Serverpod projects)
+1. Endpoints extend `Endpoint`; every method's first parameter is `Session session`.
+2. Endpoint methods return typed `Future<T>` / `Stream<T>` with a serializable `T` (model or supported primitive).
+3. Server code is stateless — no global/static mutable state.
+4. Server `lib/src/generated/` is never hand-edited (only `serverpod generate`).
+5. `serverpod create-migration` was run for schema-affecting model changes.
+6. The Flutter app calls the server only through the generated client, behind repositories — no direct `client.*` calls in widgets or ViewModels.
+7. Server `domain/` (when the backend uses Clean Architecture) has no `serverpod` or generated protocol imports.
 
 ### Code Quality
 1. Files follow `snake_case.dart` naming.

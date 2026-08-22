@@ -16,8 +16,45 @@ argument-hint: 'Project name and main features'
 Ask the user **before starting** if any of these are undefined:
 - Architecture style: Clean Architecture or Vertical Slice Architecture? If not decided, refer to the kickoff diagnostic questions.
 - State management: **Riverpod 3.x + Codegen by default** (no question needed). Bloc/Cubit is a **disabled-by-default sub-option** — only ask about it if the user explicitly mentions BLoC, and only enable it with explicit user approval in the Design phase.
+- Backend: does the app need a backend? Ask the user to choose between **Serverpod (Dart full-stack)**, an **external REST/GraphQL API**, or **no backend**. If Serverpod, also ask the backend structure (idiomatic Serverpod, Clean Architecture, or Vertical Slice Architecture) per the `flutter-serverpod` skill.
 
 ## Procedure
+
+### Full-Stack (Serverpod) Path
+
+When the user selected **Serverpod** as the backend, scaffold the full stack in
+one Dart workspace. Follow the `flutter-serverpod` skill for the complete
+workflow.
+
+1. **Create the workspace**
+   ```bash
+   serverpod create <project_name>
+   ```
+   Produces `<project_name>_server/`, `<project_name>_client/`, and
+   `<project_name>_flutter/` under a Dart pub workspace root.
+
+2. **Choose the backend structure** (idiomatic Serverpod / Clean Architecture /
+   Vertical Slice Architecture) and set up the server's `lib/src/` accordingly
+   (see the `flutter-serverpod` skill).
+
+3. **Set up the Flutter app layers** — inside `<project_name>_flutter/lib/`,
+   follow the Clean Architecture or Vertical Slice Architecture path below.
+   Skip the `flutter create` step in those paths — the app already exists at
+   `<project_name>_flutter/`.
+
+4. **Add Serverpod dependencies to the app**
+   - `serverpod_flutter` (client runtime + connectivity monitor)
+   - the generated `<project_name>_client` package (path dependency)
+
+5. **Create base files**
+   - `lib/core/api/serverpod_client.dart` — `Client` + `FlutterConnectivityMonitor` setup
+   - Wire `client` as a Riverpod `Provider` (see the `flutter-riverpod-viewmodel` skill)
+
+6. **Verify**
+   - `docker compose up -d` in the server directory.
+   - `dart run bin/main.dart --apply-migrations` — server starts on :8080.
+   - `serverpod generate` — no errors.
+   - `flutter run -d chrome` in the flutter directory — app connects to the server.
 
 ### Clean Architecture Path
 

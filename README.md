@@ -65,7 +65,7 @@ PovoAgent/
 ## Available Patterns
 
 - Flutter: `flutter/`.
-    Description: Cross-platform mobile with Dart and Clean Architecture.
+    Description: Cross-platform mobile with Dart and Clean Architecture. Optional Serverpod backend for a single-language (Dart) full-stack app.
 - .NET + C#: `dotnet/`.
     Description: Web API, MAUI, Blazor, and WPF with Clean Architecture.
 - Angular: `angular/`.
