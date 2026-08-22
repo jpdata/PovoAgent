@@ -14,10 +14,11 @@ layering used for the Riverpod ViewModel pattern:
    Vertical Slice Architecture), models (`.spy.yaml`), endpoints, migrations,
    generated-client integration into the Flutter data layer, and Serverpod
    testing.
-2. **Conventions alignment** — `flutter/conventions.md` gained a
-   "Backend (Serverpod)" section (single language, workspace layout, three
-   backend structures, client integration rules, codegen commands, decoupling
-   rules) plus four Serverpod rows in the Common Packages table.
+2. **Conventions alignment** — `flutter/conventions.md` gained a backend
+   section (later generalized to "Backend (Dart single-language)" to also
+   cover Dart Frog): single language, workspace layout, three backend
+   structures, client integration rules, codegen commands, decoupling rules —
+   plus four Serverpod rows in the Common Packages table.
 3. **Existing skill alignment** — `flutter-scaffold`, `flutter-feature`,
    `flutter-spec`, and `flutter-testing` route through the Serverpod pattern
    when the backend option is enabled.
@@ -41,7 +42,7 @@ UI.
 | File                                        | Change                                                                                                                                                                             |
 | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `flutter/skills/flutter-serverpod/SKILL.md` | **New** — Full Serverpod backend skill (prereqs, CLI, workspace layout, run commands, 3 backend structures, models, endpoints, migrations, client integration, testing, checklist) |
-| `flutter/conventions.md`                    | **Updated** — Added "Backend (Serverpod)" section + decoupling rules + 4 packages in the Common Packages table                                                                     |
+| `flutter/conventions.md`                    | **Updated** — Added a backend section (now "Backend (Dart single-language)") + decoupling rules + 4 packages in the Common Packages table                                                                     |
 | `flutter/skills/flutter-scaffold/SKILL.md`  | **Updated** — Full-stack scaffold path (`serverpod create` workspace) + backend pre-scaffold question                                                                              |
 | `flutter/skills/flutter-feature/SKILL.md`   | **Updated** — Serverpod endpoint + model + generated-client integration steps                                                                                                      |
 | `flutter/skills/flutter-spec/SKILL.md`      | **Updated** — Serverpod endpoint/model spec units + server test mapping                                                                                                            |

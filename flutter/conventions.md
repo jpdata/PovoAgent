@@ -118,40 +118,61 @@ These principles apply to both architectures:
 - **Never** use `StateProvider`, `StateNotifierProvider`, or `ChangeNotifierProvider` in new code — they are legacy in Riverpod 3.x.
 - A project must never mix Riverpod and Bloc/Cubit for the same feature.
 
-## Backend (Serverpod)
+## Backend (Dart single-language)
 
-Serverpod is an **opt-in backend sub-option** of the Flutter pattern. When the
-user selects Flutter and needs a backend, kickoff/design offers three choices:
-**Serverpod (Dart full-stack)**, **external REST/GraphQL API**, or **no
-backend**. Serverpod is only enabled when explicitly selected.
+When the user selects Flutter and needs a backend, kickoff/design offers four
+choices: **Serverpod (Dart full-stack with codegen/ORM)**, **Dart Frog
+(lightweight Dart REST API)**, **external REST/GraphQL API**, or **no backend**.
+Both Dart backends are **opt-in sub-options** — only enabled when explicitly
+selected. A project picks one backend; Serverpod and Dart Frog are mutually
+exclusive alternatives.
 
-- **Single language:** models, endpoints, and database access on the server,
-  plus a generated Dart client consumed by the Flutter app — all in Dart.
+### Serverpod
+
+- **Style:** full-stack framework with codegen — models (`.spy.yaml`), typed
+  endpoints, ORM, and a generated Dart client consumed by the Flutter app.
 - **Workspace layout:** `serverpod create <name>` produces a Dart pub workspace
   with `<name>_server/`, `<name>_client/`, and `<name>_flutter/`.
 - **Backend structure** (user chooses in the Design phase, per the
-  `flutter-serverpod` skill):
-  - **Idiomatic Serverpod** — `lib/src/endpoints/` + `lib/src/models/`.
-  - **Clean Architecture** — layer-first (`domain/`, `data/`, `presentation/`)
-    inside the server.
-  - **Vertical Slice Architecture** — feature-first (`features/<feature>/`)
-    inside the server.
+  `flutter-serverpod` skill): idiomatic Serverpod (`endpoints/` + `models/`),
+  Clean Architecture (layer-first), or Vertical Slice Architecture
+  (feature-first) inside the server.
 - **Client integration:** the generated client is consumed only in the Flutter
   `data/` layer behind repositories. `domain/` stays pure Dart. Never call
   `client.*` from widgets or ViewModels.
 - **Codegen:** `serverpod generate` after model/endpoint changes;
   `serverpod create-migration` after schema-affecting model changes.
-- Follow the `flutter-serverpod` skill for all backend work.
+- Follow the `flutter-serverpod` skill for all Serverpod backend work.
 
-### Serverpod Decoupling Rules
+### Dart Frog
 
-- Server `generated/` code is never hand-edited.
-- When the backend uses Clean Architecture, the server `domain/` must not import
-  `serverpod` or generated protocol types.
-- When the backend uses VSA, server slices are self-contained; cross-slice
+- **Style:** lightweight REST framework built on `shelf` — file-system routing,
+  middleware, and DI via `provider`; no codegen and no ORM. The Flutter app
+  calls it over HTTP (`http`/`dio`).
+- **Workspace layout:** sibling projects `<name>_app/` (`flutter create`) +
+  `<name>_api/` (`dart_frog create`).
+- **Backend structure** (user chooses in the Design phase, per the
+  `flutter-dart-frog` skill): idiomatic Dart Frog (feature-first `routes/`),
+  Clean Architecture (`lib/domain/` + `lib/data/` + `routes/` as presentation),
+  or Vertical Slice Architecture (feature folders grouping route + logic +
+  data).
+- **Client integration:** the Flutter `data/` layer calls the REST endpoints
+  via `http`/`dio` behind repositories. `domain/` stays pure Dart. Never call
+  HTTP directly from widgets or ViewModels.
+- **Run:** `dart_frog dev` (hot reload, port 8080); `dart_frog build` for
+  production (includes a Dockerfile).
+- Follow the `flutter-dart-frog` skill for all Dart Frog backend work.
+
+### Backend Decoupling Rules
+
+- Serverpod: server `generated/` code is never hand-edited.
+- When a backend uses Clean Architecture, the backend `domain/` must not import
+  the framework (no `serverpod`/generated protocol, no `dart_frog`/`shelf`).
+- When a backend uses VSA, backend slices are self-contained; cross-slice
   communication goes through shared kernel types or events.
-- The Flutter app talks to the server only through the generated client, behind
-  repositories — never through raw HTTP calls.
+- The Flutter app talks to the backend only through the generated client
+  (Serverpod) or HTTP clients behind repositories (Dart Frog) — never raw calls
+  from widgets or ViewModels.
 
 ## Naming Conventions
 
@@ -184,8 +205,10 @@ backend**. Serverpod is only enabled when explicitly selected.
 | Code generation     | `freezed`, `json_serializable`, `riverpod_generator`        | Both + Riverpod                                                       |
 | Backend (Serverpod) | `serverpod`                                                 | Opt-in full-stack Dart backend (server)                               |
 | Backend client      | `serverpod_flutter` (+ generated `<project>_client`)        | Opt-in — generated client consumed in the data layer                  |
-| Backend CLI         | `serverpod_cli`                                             | Opt-in — `dart pub global activate serverpod_cli`                     |
+| Serverpod CLI       | `serverpod_cli`                                             | Opt-in — `dart pub global activate serverpod_cli`                     |
 | Backend testing     | `serverpod_test`                                            | Opt-in — `withServerpod` server tests                                 |
+| Backend (Dart Frog) | `dart_frog`                                                 | Opt-in lightweight Dart REST backend                                  |
+| Dart Frog CLI       | `dart_frog_cli`                                             | Opt-in — `dart pub global activate dart_frog_cli`                     |
 
 ## Package Version Selection
 

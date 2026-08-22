@@ -41,7 +41,7 @@ Conduct the kickoff as a guided interview. Ask questions in the following order.
 
 11. **Technology pattern** — Which technology pattern applies? (flutter | react | angular | dotnet | astro | other)
     - If "other", ask the user to describe the stack so it can be noted in the intake document.
-    - If **flutter** is selected, ask about the backend: **Serverpod (Dart full-stack)**, **external REST/GraphQL API**, or **no backend**. If Serverpod, also ask the backend structure (idiomatic Serverpod, Clean Architecture, or Vertical Slice Architecture) per the `flutter-serverpod` skill.
+    - If **flutter** is selected, ask about the backend: **Serverpod (Dart full-stack with codegen/ORM)**, **Dart Frog (lightweight Dart REST API)**, **external REST/GraphQL API**, or **no backend**. If Serverpod or Dart Frog is chosen, also ask the backend structure (idiomatic, Clean Architecture, or Vertical Slice Architecture) per the `flutter-serverpod` or `flutter-dart-frog` skill.
 12. **AI platform** — Which AI platform will be used in this project? (copilot | opencode | claude | gemini | other)
 13. **Integrations** — Are there any external systems, APIs, or services this project must integrate with?
 14. **Architecture style** — Which architecture style do you prefer for structuring the project?
@@ -102,7 +102,7 @@ Apply corrections if needed, then generate the document.
 - **Pattern:** <flutter | react | angular | dotnet | astro | other>
 - **AI Platform:** <copilot | opencode | claude | gemini | other>
 - **Architecture:** <Clean Architecture | Vertical Slice Architecture>
-- **Backend:** <Serverpod (Dart full-stack) | external REST/GraphQL API | none> — Flutter only
+- **Backend:** <Serverpod (Dart full-stack) | Dart Frog (Dart REST API) | external REST/GraphQL API | none> — Flutter only
 - **External Integrations:** <list of integrations>
 
 ## Team and Risks

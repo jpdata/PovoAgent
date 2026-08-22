@@ -123,6 +123,18 @@
 - Updated: `flutter/conventions.md` (Backend section + packages table), 3 Flutter agents, `flutter-scaffold`, `flutter-feature`, `flutter-spec`, `flutter-testing` skills, `skills/kickoff/SKILL.md`.
 - Doc: `Docs/flutter-serverpod-pattern.md`. VERSION bumped 0.5.1 → 0.6.1.
 
+## Flutter Dart Frog Backend (2026-08-22)
+
+- New pattern skill `flutter/skills/flutter-dart-frog/SKILL.md` — Dart Frog as a second **opt-in backend sub-option** of the Flutter pattern (lightweight Dart REST API), alongside Serverpod.
+- Activation: kickoff/design backend question now offers Serverpod, Dart Frog, external API, or none. Serverpod and Dart Frog are mutually exclusive alternatives.
+- Layout: sibling projects `<name>_app/` (`flutter create`) + `<name>_api/` (`dart_frog create`).
+- Backend structure is a user choice: idiomatic Dart Frog (feature-first `routes/`), Clean Architecture, or Vertical Slice Architecture.
+- Routes are `onRequest(RequestContext context, ...)` functions; DI via `provider<T>` + `context.read<T>()`.
+- Flutter app consumes the API via `http`/`dio` only in the `data/` layer behind repositories; `domain/` stays pure Dart.
+- `flutter/conventions.md` backend section generalized to "Backend (Dart single-language)".
+- Updated: `flutter/conventions.md`, 3 Flutter agents, `flutter-scaffold`, `flutter-feature`, `flutter-spec`, `flutter-testing`, `skills/kickoff/SKILL.md`.
+- Doc: `Docs/flutter-dart-frog-pattern.md`. VERSION bumped 0.6.1 → 0.7.0.
+
 ## Carry-Over
 
 - None.

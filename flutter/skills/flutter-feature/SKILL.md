@@ -162,6 +162,38 @@ package alongside the Flutter code:
 5. **Server tests** — add `withServerpod` tests in `<project>_server/test/`
    (see the `flutter-testing` skill).
 
+## Dart Frog Backend
+
+When the project uses **Dart Frog** as the backend (see the `flutter-dart-frog`
+skill), implement the backend side of a feature in the `<name>_api` package
+alongside the Flutter code:
+
+1. **Create the route**
+   ```dart
+   // <name>_api/routes/<feature>/index.dart  (or routes/<feature>.dart)
+   import 'package:dart_frog/dart_frog.dart';
+
+   Future<Response> onRequest(RequestContext context) async {
+     final body = await context.request.json();
+     return Response.json(body: {'created': true});
+   }
+   ```
+
+2. **Add middleware / DI** (if the feature needs shared dependencies)
+   ```dart
+   // <name>_api/routes/_middleware.dart
+   Handler middleware(Handler handler) {
+     return handler.use(provider<FeatureService>((context) => FeatureService()));
+   }
+   ```
+
+3. **Call from the Flutter data layer** — update the feature's remote data
+   source to call the REST endpoint (`http`/`dio`), behind the repository as
+   usual. Never call HTTP directly from widgets or ViewModels.
+
+4. **Route tests** — add `package:test` + `mocktail` tests in `<name>_api/test/`
+   (see the `flutter-testing` skill).
+
 ## Decoupling Checklist
 
 **Clean Architecture:**

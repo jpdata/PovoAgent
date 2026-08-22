@@ -29,6 +29,18 @@
 
 ## Documented Updates
 
+### 2026-08-22 - Flutter Dart Frog backend sub-option integrated
+
+- Created `flutter/skills/flutter-dart-frog/SKILL.md` — Dart Frog as a second **opt-in backend sub-option** of the Flutter pattern (lightweight Dart REST API), alongside Serverpod. Covers prerequisites, CLI install, sibling-project layout (`<name>_app/` + `<name>_api/`), local run commands, three backend structure options (idiomatic Dart Frog, Clean Architecture, Vertical Slice Architecture), routes (`onRequest`, dynamic `[id].dart`), requests/responses, middleware + DI (`provider<T>` / `context.read<T>()`), client integration into the Flutter data layer, and testing with `package:test` + `mocktail`.
+- Updated `flutter/conventions.md` — generalized the backend section to **"Backend (Dart single-language)"**, presenting Serverpod and Dart Frog as mutually exclusive alternatives, and added two Dart Frog rows to the Common Packages table.
+- Updated `flutter/skills/flutter-scaffold/SKILL.md`, `flutter/skills/flutter-feature/SKILL.md`, `flutter/skills/flutter-spec/SKILL.md`, `flutter/skills/flutter-testing/SKILL.md` — route through the Dart Frog pattern when that backend option is enabled.
+- Updated `flutter/agents/flutter-architect.agent.md`, `flutter/agents/flutter-developer.agent.md`, `flutter/agents/flutter-reviewer.agent.md` — Dart Frog backend design, route/middleware implementation, and review checks respectively.
+- Updated `skills/kickoff/SKILL.md` — backend question now lists Dart Frog alongside Serverpod.
+- Updated `Docs/flutter-serverpod-pattern.md` — conventions section references the unified "Backend (Dart single-language)" section.
+- Created `Docs/flutter-dart-frog-pattern.md` — full documentation of the pattern and integration.
+- Why: Serverpod covers full-stack Dart with codegen/ORM, but many projects only need a lightweight REST API. Dart Frog fills that gap — a minimal, file-system-routed backend on `shelf` with hot reload, middleware, and DI — still 100% Dart. Per user request, the backend structure is a user choice between idiomatic Dart Frog, Clean Architecture, and Vertical Slice Architecture.
+- Affected files: `flutter/skills/flutter-dart-frog/SKILL.md`, `flutter/conventions.md`, `flutter/skills/flutter-scaffold/SKILL.md`, `flutter/skills/flutter-feature/SKILL.md`, `flutter/skills/flutter-spec/SKILL.md`, `flutter/skills/flutter-testing/SKILL.md`, `flutter/agents/flutter-architect.agent.md`, `flutter/agents/flutter-developer.agent.md`, `flutter/agents/flutter-reviewer.agent.md`, `skills/kickoff/SKILL.md`, `Docs/flutter-serverpod-pattern.md`, `Docs/flutter-dart-frog-pattern.md`, `Docs/framework-ai-enhancement-phase.md`, `VERSION`, `.github/project-memory.md`.
+
 ### 2026-08-22 - Flutter Serverpod backend sub-option integrated
 
 - Created `flutter/skills/flutter-serverpod/SKILL.md` — Serverpod as an **opt-in backend sub-option** of the Flutter pattern, enabling a single-language (Dart) full-stack environment. Covers prerequisites, CLI install, `serverpod create` workspace layout (`_server`, `_client`, `_flutter`), local run commands, three backend structure options (idiomatic Serverpod, Clean Architecture, Vertical Slice Architecture), models (`.spy.yaml`), endpoints, migrations, generated-client integration into the Flutter data layer, and Serverpod testing.

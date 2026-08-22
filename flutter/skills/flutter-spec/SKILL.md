@@ -25,6 +25,8 @@ argument-hint: 'Feature, ViewModel, BLoC, or widget name to specify'
 | Widget (page / feature) | Presentation | Rendered output per state, user interactions |
 | Serverpod model (`.spy.yaml`) | Backend (Serverpod) | `class:` / `table:` / `fields:`, field types, serialization |
 | Serverpod endpoint | Backend (Serverpod) | Method signatures (`Session`, typed `Future`/`Stream`), stateless behavior, error types |
+| Dart Frog route handler | Backend (Dart Frog) | `onRequest(RequestContext, ...)` signature, HTTP method/status, JSON request/response |
+| Dart Frog middleware / provider | Backend (Dart Frog) | `provider<T>` injection, `context.read<T>()`, ordering (bottom-to-top) |
 
 > **State management default:** Riverpod 3.x + Codegen following the
 > `flutter-riverpod-viewmodel` skill. BLoC/Cubit is only specified when it was
@@ -151,6 +153,47 @@ Add the following to each spec when the project uses **Serverpod** (see the
 | Endpoint failure | Same helper, arrange failing precondition, assert exception/error |
 | Model round-trip | Insert via `endpoints`, read back, assert field equality |
 | DB persistence | `withServerpod` + `Model.db.find/insertRow`, assert persisted row |
+````
+
+## Dart Frog Specification Fields
+
+Add the following to each spec when the project uses **Dart Frog** (see the
+`flutter-dart-frog` skill):
+
+````markdown
+## Dart Frog Implementation Hints
+
+### Unit Type
+- [ ] Route handler (`onRequest` in `routes/`)
+- [ ] Middleware / provider (`provider<T>` injection)
+- [ ] Every Dart Frog route-handler spec names the `onRequest(RequestContext, ...)` signature, HTTP method, and status codes (only in Dart Frog projects).
+- [ ] Every Dart Frog middleware spec lists the `provider<T>` type and `context.read<T>()` usage (only in Dart Frog projects).
+
+### Route Handler Spec
+| Endpoint | Method | Handler signature | Status codes | Error responses |
+|---|---|---|---|---|
+| `/users` | GET | `Response onRequest(RequestContext c)` | `200`, `500` | `Response.json` error body |
+| `/users/:id` | GET | `Response onRequest(RequestContext c, String id)` | `200`, `404` | — |
+
+- Handler returns `Response` or `Future<Response>`.
+- Read body via `context.request.json()` / `body()` / `formData()`.
+- Dynamic params are extra positional args (`String id`).
+
+### Middleware / Provider Spec
+| Provider | Type | Read via | Order |
+|---|---|---|---|
+| `FeatureService` | `provider<FeatureService>` | `context.read<FeatureService>()` | before dependents |
+
+- Providers are lazy; cache via a captured variable if reused.
+- Order resolves bottom-to-top: declare dependents before dependencies.
+
+### Route Test Mapping
+| Scenario | Test Approach |
+|---|---|
+| Handler success | `package:test` + `mocktail`; mock `RequestContext`; assert `statusCode` + `body()` |
+| Handler failure | Arrange failing precondition, assert error `statusCode`/body |
+| DI stub | `when(() => context.read<T>()).thenReturn(...)` |
+| Middleware | Apply to dummy handler, assert provided value reachable |
 ````
 
 ## Acceptance Criteria (Flutter-specific additions)

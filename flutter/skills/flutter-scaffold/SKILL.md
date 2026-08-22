@@ -16,7 +16,7 @@ argument-hint: 'Project name and main features'
 Ask the user **before starting** if any of these are undefined:
 - Architecture style: Clean Architecture or Vertical Slice Architecture? If not decided, refer to the kickoff diagnostic questions.
 - State management: **Riverpod 3.x + Codegen by default** (no question needed). Bloc/Cubit is a **disabled-by-default sub-option** — only ask about it if the user explicitly mentions BLoC, and only enable it with explicit user approval in the Design phase.
-- Backend: does the app need a backend? Ask the user to choose between **Serverpod (Dart full-stack)**, an **external REST/GraphQL API**, or **no backend**. If Serverpod, also ask the backend structure (idiomatic Serverpod, Clean Architecture, or Vertical Slice Architecture) per the `flutter-serverpod` skill.
+- Backend: does the app need a backend? Ask the user to choose between **Serverpod (Dart full-stack with codegen/ORM)**, **Dart Frog (lightweight Dart REST API)**, an **external REST/GraphQL API**, or **no backend**. If Serverpod or Dart Frog is chosen, also ask the backend structure (idiomatic, Clean Architecture, or Vertical Slice Architecture) per the `flutter-serverpod` or `flutter-dart-frog` skill.
 
 ## Procedure
 
@@ -55,6 +55,35 @@ workflow.
    - `dart run bin/main.dart --apply-migrations` — server starts on :8080.
    - `serverpod generate` — no errors.
    - `flutter run -d chrome` in the flutter directory — app connects to the server.
+
+### Full-Stack (Dart Frog) Path
+
+When the user selected **Dart Frog** as the backend, scaffold the Flutter app
+and the Dart Frog API as sibling projects. Follow the `flutter-dart-frog` skill
+for the complete workflow.
+
+1. **Create the sibling projects**
+   ```bash
+   flutter create <name>_app    # Flutter app
+   dart_frog create <name>_api  # Dart Frog API
+   ```
+
+2. **Choose the backend structure** (idiomatic Dart Frog / Clean Architecture /
+   Vertical Slice Architecture) and set up `routes/` + `lib/` accordingly (see
+   the `flutter-dart-frog` skill).
+
+3. **Set up the Flutter app layers** — inside `<name>_app/lib/`, follow the
+   Clean Architecture or Vertical Slice Architecture path below.
+
+4. **Add HTTP dependencies to the app** — `http` (preferred) or `dio`.
+
+5. **Create base files**
+   - `lib/core/api/api_client.dart` — base URL + HTTP client (defaults to `http://localhost:8080`)
+
+6. **Verify**
+   - `dart_frog dev` in the API directory — server starts on :8080.
+   - `dart_frog build` — no route conflicts/rogue routes.
+   - `flutter run -d chrome` in the app directory — app connects to the API.
 
 ### Clean Architecture Path
 

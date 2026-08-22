@@ -90,6 +90,39 @@ void main() {
 }
 ```
 
+### Dart Frog Tests (backend)
+
+When the project uses **Dart Frog** (see the `flutter-dart-frog` skill), test
+route handlers and middleware in `<name>_api/test/`:
+
+1. Use `package:test` and `package:mocktail` — handlers are plain Dart functions.
+2. Mock `RequestContext`; assert `response.statusCode` and `response.body()`.
+3. Stub injected dependencies with
+   `when(() => context.read<T>()).thenReturn(...)`.
+4. File: `<name>_api/test/routes/<feature>_test.dart`.
+5. Flutter-side repository tests mock the HTTP client (`http`/`dio`) — never hit
+   a real server in widget/unit tests.
+
+```dart
+// <name>_api/test/routes/hello_test.dart
+import 'dart:io';
+import 'package:dart_frog/dart_frog.dart';
+import 'package:mocktail/mocktail.dart';
+import 'package:test/test.dart';
+import '../../routes/hello.dart' as route;
+
+class _MockRequestContext extends Mock implements RequestContext {}
+
+void main() {
+  test('GET /hello responds 200 with greeting', () async {
+    final context = _MockRequestContext();
+    final response = route.onRequest(context);
+    expect(response.statusCode, equals(HttpStatus.ok));
+    expect(response.body(), completion(equals('Hello World')));
+  });
+}
+```
+
 ## Decoupling Validation
 
 **Clean Architecture:**
@@ -140,6 +173,15 @@ void main() {
 2. **Client behind repositories**: Verify the Flutter app calls the server only
    through the generated client inside `data/` data sources, never directly
    from widgets or ViewModels.
+
+**Dart Frog:**
+1. **Routes only in `routes/`**: Verify route handlers live under `routes/` and
+   `dart_frog build` passes (no route conflicts/rogue routes).
+2. **Client behind repositories**: Verify the Flutter app calls the API only
+   through `http`/`dio` inside `data/` data sources, never directly from
+   widgets or ViewModels.
+3. **DI via provider**: Verify dependencies are injected with `provider<T>` and
+   read with `context.read<T>()` (not global singletons).
 
 ### Coverage
 ```bash
