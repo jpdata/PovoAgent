@@ -51,7 +51,7 @@ backend while keeping a single language across app and server.
 | `skills/kickoff/SKILL.md`                    | **Updated** — Backend question lists Dart Frog alongside Serverpod                                                                                       |
 | `Docs/flutter-serverpod-pattern.md`          | **Updated** — Conventions section references the unified "Backend (Dart single-language)" section                                                         |
 | `Docs/framework-ai-enhancement-phase.md`     | **Updated** — Added entry for this change                                                                                                                |
-| `VERSION`                                    | **Updated** — Bumped to 0.7.0                                                                                                                            |
+| `VERSION`                                    | **Updated** — Bumped to 0.7.1                                                                                                                            |
 | `.github/project-memory.md`                  | **Updated** — Added Dart Frog section                                                                                                                    |
 
 ## Key Rules of the Pattern

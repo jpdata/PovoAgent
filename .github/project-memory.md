@@ -133,7 +133,7 @@
 - Flutter app consumes the API via `http`/`dio` only in the `data/` layer behind repositories; `domain/` stays pure Dart.
 - `flutter/conventions.md` backend section generalized to "Backend (Dart single-language)".
 - Updated: `flutter/conventions.md`, 3 Flutter agents, `flutter-scaffold`, `flutter-feature`, `flutter-spec`, `flutter-testing`, `skills/kickoff/SKILL.md`.
-- Doc: `Docs/flutter-dart-frog-pattern.md`. VERSION bumped 0.6.1 → 0.7.0.
+- Doc: `Docs/flutter-dart-frog-pattern.md`. VERSION bumped 0.6.1 → 0.7.1.
 
 ## Carry-Over
 
