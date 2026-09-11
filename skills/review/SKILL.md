@@ -98,5 +98,15 @@ Read the Design Document to identify whether the project uses Clean Architecture
 - Each slice can be compiled and tested in isolation.
 - Shared kernel (if any) is explicit and contains only cross-cutting types, not business logic.
 
+## Update Project Cache
+
+After completing the review, update `PROJECT_CACHE.md` incrementally (if it exists):
+
+1. Append a new entry to the **Cache Refresh Log** with the current date, the trigger (e.g., "Review of <feature>"), and a short changes summary.
+2. Update the **Symbol Index** and **File Index** with any new or changed symbols and files confirmed during the review.
+3. Record any architecture decisions or constraints confirmed during the review in **Key Decisions & Constraints**.
+
+If `PROJECT_CACHE.md` does not exist yet, generate it from `templates/project-cache.md` after the task and suggest it to the user.
+
 ## Pattern Reference
 For technology-specific review criteria (framework idioms, pattern naming, file conventions), consult the active pattern's `conventions.md` and the `reviewer` sub-agent.

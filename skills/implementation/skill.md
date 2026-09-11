@@ -99,5 +99,15 @@ Read the Design Document to identify whether the project uses Clean Architecture
 ## Decoupling Rule
 Presentation logic must reside in components separated from business logic and backend integration.
 
+## Update Project Cache
+
+After completing the implementation, update `PROJECT_CACHE.md` incrementally (if it exists):
+
+1. Append a new entry to the **Cache Refresh Log** with the current date, the trigger (e.g., "Implementation of <feature>"), and a short changes summary.
+2. Update the **Symbol Index** with any new or changed classes, interfaces, services, or providers.
+3. Update the **File Index** with any new or removed files and directories.
+
+If `PROJECT_CACHE.md` does not exist yet (e.g., a new project where scaffolding was skipped), generate it from `templates/project-cache.md` after the task and suggest it to the user.
+
 ## Pattern Reference
 For technology-specific implementation details (folder structure, packages, code patterns), consult the active pattern's skills and `conventions.md`.

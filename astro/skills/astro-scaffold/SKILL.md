@@ -83,5 +83,18 @@ argument-hint: 'Project name, site type, and main features'
 - Content schemas live in collection config files instead of being duplicated.
 - CMS or API logic lives in services or adapters, not scattered through templates.
 
+## Generate Initial Project Cache
+
+Immediately after the project builds, generate the initial `PROJECT_CACHE.md` at the project root using the `templates/project-cache.md` template:
+
+1. **Metadata** — project name, pattern (`astro`), AI platform, architecture style, Generated date, Last Updated, and Stale After (Last Updated + 30 days).
+2. **Architecture Map** — fill the section that applies to the project's chosen structure (layers or slices) with the folders and key files just created, plus cross-module contracts as applicable.
+3. **File Index** — list entry points, config files, and key directories created during scaffolding with approximate file counts.
+4. **Domain Map / Symbol Index** — leave placeholder tables empty; they are populated incrementally as features are implemented.
+5. **Key Decisions & Constraints** — record the rendering model, integrations, and architecture choices from the Design phase.
+6. **Cache Refresh Log** — append the first entry: current date, trigger "Initial scaffold", and a short changes summary.
+
+This makes the cache available to Implementation, Testing, and Review from the very first task, avoiding redundant codebase scans.
+
 ## Reference
 - Refer to `conventions.md` in the project root for Astro conventions.

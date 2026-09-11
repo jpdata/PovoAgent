@@ -79,5 +79,15 @@ Read the Design Document to identify the architecture style. All test organizati
 - **Clean Architecture:** Presentation tests must be executable independently from business logic and backend.
 - **Vertical Slice Architecture:** Each slice's tests must be executable independently from other slices. Cross-slice contracts are verified through contract tests, not by running dependent slices.
 
+## Update Project Cache
+
+After completing the testing, update `PROJECT_CACHE.md` incrementally (if it exists):
+
+1. Append a new entry to the **Cache Refresh Log** with the current date, the trigger (e.g., "Testing of <feature>"), and a short changes summary.
+2. Update the **File Index** (Test Files section) with any new or changed test files and directories.
+3. Update the **Symbol Index** with any new or changed symbols introduced by the tests.
+
+If `PROJECT_CACHE.md` does not exist yet, generate it from `templates/project-cache.md` after the task and suggest it to the user.
+
 ## Pattern Reference
 For technology-specific testing details (test commands, coverage tools, mocking libraries), consult the active pattern's skills and `conventions.md`.

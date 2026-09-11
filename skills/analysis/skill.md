@@ -51,6 +51,10 @@ Manage requirements gathering, use case analysis, user flows, dependencies, and 
 - Risks are identified with mitigation strategies.
 - The document is reviewed and approved before moving to Design.
 
+## Mode 1 — Project Cache
+
+The Project Cache (`PROJECT_CACHE.md`) is **not** generated during Analysis. For new projects it is generated at the end of the **Scaffold** phase by the pattern's `<pattern>-scaffold` skill, and updated incrementally by `implementation`, `testing`, and `review` as features are completed. See `Docs/project-cache-system.md`.
+
 ## Mode 2 — Existing Project Assessment
 
 ### Objective

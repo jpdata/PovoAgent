@@ -111,7 +111,7 @@ Invoke a skill by calling the `skill` tool with the skill name, or mention it na
 2. Agent loads the **analysis** skill to produce the Analysis Plan.
 3. Agent loads the **planning** skill to produce `PROJECT_PLAN.md`. User approves before continuing.
 4. Agent loads the **design** skill (delegates to the architect sub-agent) to produce architecture and API docs.
-5. Agent loads the pattern **scaffold** skill to initialize the project structure.
+5. Agent loads the pattern **scaffold** skill to initialize the project structure, then generates the initial `PROJECT_CACHE.md` at the project root.
 6. Agent loads the **implementation** skill (uses pattern **feature** skill per feature) to build decoupled code.
 7. Agent loads the **testing** skill (uses pattern **testing** skill) to validate behavior per layer.
 8. Agent loads the **review** skill (delegates to the reviewer sub-agent) to validate SOLID, decoupling, and conventions.

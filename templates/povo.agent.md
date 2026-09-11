@@ -106,7 +106,7 @@ The **Project Cache** (`PROJECT_CACHE.md`) is a machine-generated file that stor
 
 | Stage | When | Who | Action |
 |---|---|---|---|
-| **Creation** | First Assessment (Mode 2 of `analysis`) | `analysis` skill | Generates full `PROJECT_CACHE.md` from `templates/project-cache.md` |
+| **Creation** | New projects: at Scaffold completion; Existing projects: first Assessment (Mode 2 of `analysis`) | `<pattern>-scaffold` skill (new projects) / `analysis` skill (existing projects) | Generates full `PROJECT_CACHE.md` from `templates/project-cache.md` |
 | **Read** | Every Existing Project workflow start | All skills that need code context | Read cache to get architecture map, file index, symbol locations |
 | **Update (incremental)** | After a significant change (feature, refactor, new slice/layer) | Each completing workflow | Append refresh log entry, update affected sections |
 | **Refresh (full)** | Re-Assessment when stale (>30 days) | `analysis` skill | Full re-generation, previous entries preserved in log |
@@ -132,7 +132,7 @@ Every skill that needs to examine the codebase (whether to find files, understan
 
 ### When to Update the Cache
 
-After completing a **significant change** (new feature, modification that adds files or types, refactor that restructures code, new slice or layer), append a new entry to the **Cache Refresh Log** and update the **Symbol Index** and **File Index** sections with the new or changed symbols and files. The `analysis` skill handles full cache generation; other skills perform incremental updates only.
+After completing a **significant change** (new feature, modification that adds files or types, refactor that restructures code, new slice or layer), append a new entry to the **Cache Refresh Log** and update the **Symbol Index** and **File Index** sections with the new or changed symbols and files. The `<pattern>-scaffold` skill generates the initial cache for new projects and the `analysis` skill handles full re-generation; other skills perform incremental updates only.
 
 ## Workflow
 
@@ -142,7 +142,7 @@ After completing a **significant change** (new feature, modification that adds f
 2. Agent invokes the **analysis** skill to produce the Analysis Plan.
 3. Agent invokes the **planning** skill to produce `PROJECT_PLAN.md`. User approves before continuing.
 4. Agent invokes the **design** skill (delegates to the **architect** sub-agent) to produce architecture and API docs.
-5. Agent invokes the pattern **scaffold** skill to initialize the project structure.
+5. Agent invokes the pattern **scaffold** skill to initialize the project structure, then generates the initial `PROJECT_CACHE.md` at the project root.
 6. Agent invokes the **implementation** skill (uses pattern **feature** skill per feature) to build decoupled code.
 7. Agent invokes the **testing** skill (uses pattern **testing** skill) to validate behavior per layer.
 8. Agent invokes the **review** skill (delegates to the **reviewer** sub-agent) to validate SOLID, decoupling, and conventions.

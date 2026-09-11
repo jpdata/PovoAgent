@@ -55,7 +55,10 @@ The cache follows the schema defined in `templates/project-cache.md`. The templa
 
 ### Creation
 
-The cache is first created by the `analysis` skill in **Mode 2 (Existing Project Assessment)**. After completing the assessment of a project, the skill generates a full `PROJECT_CACHE.md` by populating the template with real project data.
+The cache is created in two ways:
+
+- **New projects:** The pattern's `<pattern>-scaffold` skill generates the initial `PROJECT_CACHE.md` at the end of the **Scaffold** phase, as soon as the project structure exists. This makes the cache available from the first Implementation task onward.
+- **Existing projects:** The `analysis` skill generates a full `PROJECT_CACHE.md` in **Mode 2 (Existing Project Assessment)** after completing the assessment, by populating the template with real project data.
 
 ### Reading
 
@@ -88,11 +91,11 @@ The cache template embeds a **Stale After** date (Last Updated + 30 days) and a 
 
 ## Cache Freshness Rules
 
-| State | Condition | Action |
-|---|---|---|
-| **Fresh** | Last Updated ≤ 30 days | Use cache as primary source |
-| **Stale** | Last Updated > 30 days | Suggest re-assessment; use cache if declined |
-| **Missing** | File does not exist | Scan directly; suggest generation after task |
+| State       | Condition              | Action                                       |
+| ----------- | ---------------------- | -------------------------------------------- |
+| **Fresh**   | Last Updated ≤ 30 days | Use cache as primary source                  |
+| **Stale**   | Last Updated > 30 days | Suggest re-assessment; use cache if declined |
+| **Missing** | File does not exist    | Scan directly; suggest generation after task |
 
 ## What the Cache Reduces
 
@@ -112,23 +115,28 @@ Estimated savings: **5–15 tool calls per interaction**, which translates to fa
 
 ## Files Affected
 
-| File | Role |
-|---|---|
-| `templates/project-cache.md` | Core cache schema template |
-| `templates/povo.agent.md` | Main agent template with cache lifecycle rules |
-| `skills/analysis/SKILL.md` | Cache generation (Mode 2, Step 8) |
-| `skills/change-intake/SKILL.md` | Cache reading (Pre-Intake Check) |
-| `skills/design/SKILL.md` | Cache reading (Pre-Step) |
-| `skills/implementation/SKILL.md` | Cache reading (Pre-Step) + incremental update |
-| `skills/testing/SKILL.md` | Cache reading (Pre-Step) |
-| `skills/review/SKILL.md` | Cache reading (Pre-Step) |
-| `skills/specification/SKILL.md` | Cache reading (Pre-Step) |
-| `platforms/copilot/.github/copilot-instructions.md` | Platform-specific cache instructions |
-| `platforms/claude/CLAUDE.md` | Platform-specific cache instructions |
-| `platforms/gemini/.gemini/styleguide.md` | Platform-specific cache instructions |
-| `platforms/opencode/AGENTS.md` | Platform-specific cache instructions |
-| `platforms/opencode/opencode.json` | OpenCode instructions list (references PROJECT_CACHE.md) |
-| `Docs/project-cache-system.md` | This documentation |
+| File                                                | Role                                                     |
+| --------------------------------------------------- | -------------------------------------------------------- |
+| `templates/project-cache.md`                        | Core cache schema template                               |
+| `templates/povo.agent.md`                           | Main agent template with cache lifecycle rules           |
+| `skills/analysis/SKILL.md`                          | Cache generation (Mode 2, Step 8); Mode 1 note           |
+| `skills/change-intake/SKILL.md`                     | Cache reading (Pre-Intake Check)                         |
+| `skills/design/SKILL.md`                            | Cache reading (Pre-Step)                                 |
+| `skills/implementation/SKILL.md`                    | Cache reading (Pre-Step) + incremental update            |
+| `skills/testing/SKILL.md`                           | Cache reading (Pre-Step) + incremental update            |
+| `skills/review/SKILL.md`                            | Cache reading (Pre-Step) + incremental update            |
+| `skills/specification/SKILL.md`                     | Cache reading (Pre-Step)                                 |
+| `flutter/skills/flutter-scaffold/SKILL.md`          | Initial cache generation (new projects)                  |
+| `react/skills/react-scaffold/SKILL.md`              | Initial cache generation (new projects)                  |
+| `angular/skills/angular-scaffold/SKILL.md`          | Initial cache generation (new projects)                  |
+| `dotnet/skills/dotnet-scaffold/SKILL.md`            | Initial cache generation (new projects)                  |
+| `astro/skills/astro-scaffold/SKILL.md`              | Initial cache generation (new projects)                  |
+| `platforms/copilot/.github/copilot-instructions.md` | Platform-specific cache instructions                     |
+| `platforms/claude/CLAUDE.md`                        | Platform-specific cache instructions                     |
+| `platforms/gemini/.gemini/styleguide.md`            | Platform-specific cache instructions                     |
+| `platforms/opencode/AGENTS.md`                      | Platform-specific cache instructions                     |
+| `platforms/opencode/opencode.json`                  | OpenCode instructions list (references PROJECT_CACHE.md) |
+| `Docs/project-cache-system.md`                      | This documentation                                       |
 
 ## Migration Guide
 
@@ -138,7 +146,7 @@ If a project was created before the cache system was introduced, the first time 
 
 ### For New Projects
 
-The `PROJECT_CACHE.md` is generated during the Assessment phase. New projects using the full lifecycle (Kickoff → Analysis → Design → ...) will get their cache when they reach the Assessment stage.
+The `PROJECT_CACHE.md` is generated at the end of the **Scaffold** phase by the pattern's `<pattern>-scaffold` skill. New projects using the full lifecycle (Kickoff → Analysis → Design → Scaffold → ...) get their cache as soon as the project structure is created, and it is kept fresh by the incremental updates in `implementation`, `testing`, and `review`.
 
 ### Manual Generation
 
@@ -152,11 +160,11 @@ To generate a cache for an existing project without running a full assessment:
 
 ## Design Decisions
 
-| Decision | Rationale |
-|---|---|
-| **Markdown format** | Human-readable, diffable in Git, works across all AI platforms without special parsing |
-| **Machine-generated** | Ensures consistency; manual edits would be overwritten |
-| **30-day freshness window** | Balances accuracy with update frequency; aligns with typical sprint/release cycles |
-| **Incremental updates** | Avoids full re-generation for small changes; skills only update what they touched |
-| **Per-project, not per-skill** | Single cache per project avoids duplication and inconsistency |
-| **Symbol Index** | Most impactful addition — eliminates grep-based symbol location |
+| Decision                       | Rationale                                                                              |
+| ------------------------------ | -------------------------------------------------------------------------------------- |
+| **Markdown format**            | Human-readable, diffable in Git, works across all AI platforms without special parsing |
+| **Machine-generated**          | Ensures consistency; manual edits would be overwritten                                 |
+| **30-day freshness window**    | Balances accuracy with update frequency; aligns with typical sprint/release cycles     |
+| **Incremental updates**        | Avoids full re-generation for small changes; skills only update what they touched      |
+| **Per-project, not per-skill** | Single cache per project avoids duplication and inconsistency                          |
+| **Symbol Index**               | Most impactful addition — eliminates grep-based symbol location                        |
