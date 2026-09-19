@@ -68,7 +68,7 @@ Define decoupled architecture, UI/UX proposals, data modeling, and APIs, followi
 - UI prototypes can be changed without altering business logic.
 - Data models are consistent with API contracts.
 - Design patterns are selected and documented.
-- Design is approved before moving to Specification (CA) or Implementation (VSA).
+- Design is approved before moving to Specification for either Clean Architecture or Vertical Slice Architecture.
 
 ### Clean Architecture — Specific
 - Architecture clearly separates Presentation, Application, Domain, and Infrastructure.

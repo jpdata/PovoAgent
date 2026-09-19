@@ -108,15 +108,16 @@ flowchart TB
 
 **When:** Changing the behavior, UI, or logic of an existing feature without adding a new one.
 
-**Duration:** 3 phases (Implementation → Testing → Review)
+**Duration:** 4 phases (Specification → Implementation → Testing → Review)
 
 | # | Phase | Skill | Input | Output | Gate |
 |---|---|---|---|---|---|
-| 1 | Implementation | `implementation` + `<pattern>-feature` | `CHANGE_REQUEST.md` + existing specs | Updated decoupled code | Change compiles |
-| 2 | Testing | `testing` + `<pattern>-testing` | Updated specs + Code | Updated tests + regression report | All tests pass |
-| 3 | Review | `review` + Reviewer agent | Code + Conventions | Review report | No blocking violations |
+| 1 | Specification | `specification` + `<pattern>-spec` | `CHANGE_REQUEST.md` + existing specs | Updated `SPEC_<Feature>.md` | Spec approved when behavior changes |
+| 2 | Implementation | `implementation` + `<pattern>-feature` | Approved spec + `CHANGE_REQUEST.md` | Updated decoupled code | Change compiles |
+| 3 | Testing | `testing` + `<pattern>-testing` | Updated specs + Code | Updated tests + regression report | All tests pass |
+| 4 | Review | `review` + Reviewer agent | Code + Conventions | Review report | No blocking violations |
 
-**When to add phases:** If the modification changes contracts or APIs, insert `design` before Implementation. If the modification touches multiple features across different layers/slices, insert `analysis` (scoped impact analysis) before Implementation.
+**When to add phases:** For a trivial non-behavioral change, Specification may be abbreviated. For behavior changes, update or create a spec before Implementation. If contracts or APIs change, insert `design` before Specification. If the modification touches multiple features across different layers/slices, insert `analysis` (scoped impact analysis) before Specification.
 
 ---
 

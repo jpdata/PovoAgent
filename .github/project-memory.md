@@ -29,6 +29,9 @@
 
 ## User Corrections
 
+- 2026-09-19: `PovoAgent` must always analyze and plan before execution; after that mandatory gate it may perform the direct-development actions available through `PovoDirect`. `PovoDirect` remains the immediate-execution option.
+- 2026-09-19: The main PovoAgent lifecycle is specification-first: Design -> Specification -> Scaffold -> Implementation -> Testing -> Review. Behavioral modifications update or create a spec before implementation; contract changes add Design before Specification.
+
 - 2026-04-25: When the user asks for Copilot instructions for this repository, they mean the real workspace file in `./.github`, not in the template files under `platforms/`.
 - 2026-04-25: The Angular pattern should stay at the level of general development guidance; do not prescribe a fixed UI baseline there. Specific design-system and visual-baseline decisions belong to the analysis and design phases of each real project.
 - 2026-04-25: The React pattern should follow the same principle as Angular: keep it at the level of general development guidance and leave framework-specific UI baseline and design-system decisions to the analysis and design phases of each real project.

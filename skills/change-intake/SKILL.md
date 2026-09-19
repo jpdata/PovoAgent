@@ -102,7 +102,7 @@ Change Intake → Implementation → Testing → Review
 | 2 | Testing | `testing` + `<pattern>-testing` | Updated test suite + regression report |
 | 3 | Review | `review` + Reviewer agent | Review report |
 
-If the modification changes contracts or APIs, insert `design` before `implementation`.
+Behavioral modifications require the `specification` phase before `implementation`. If the modification changes contracts or architecture, insert `design` before `specification`.
 
 ### Bug Fix
 
